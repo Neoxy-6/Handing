@@ -13,7 +13,7 @@ def draw_hands(frame: np.ndarray, hand_frame: HandFrame) -> np.ndarray:
     h, w = frame.shape[:2]
 
     for hand in hand_frame.hands:
-        pts = (hand.landmarks[:, :3] * (w, h)).astype(int)
+        pts = (hand.landmarks[:, :2] * (w, h)).astype(int)
 
         for a, b in CONNECTIONS:
             cv2.line(frame, tuple(pts[a]), tuple(pts[b]), LINE_COLOR, 2)
