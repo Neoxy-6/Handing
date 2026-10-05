@@ -1,0 +1,19 @@
+[project]
+name = "Handing"
+version = "0.1.0"
+description = "Control your PC with Hands"
+requires-python = ">=3.10"
+
+dependencies = [
+    "mediapipe>=1.0"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "nuitka"]
+
+[project.scripts]
+handing = "handing.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
