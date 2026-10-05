@@ -17,7 +17,7 @@ def default_gestures() -> Path:
     return ROOT / "assets" / "gestures" / "default.npz"
 
 def user_dir() -> Path:
-    """%APPDATA%\Handing, created if missing"""
+    """%APPDATA%/Handing, created if missing"""
     path = Path(os.environ.get("APPDATA") or Path.home()) / APP_NAME
     path.mkdir(parents = True, exist_ok = True)
 
