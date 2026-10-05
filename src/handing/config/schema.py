@@ -43,7 +43,7 @@ class SafetyConfig:
 class MouseConfig:
     mode: str = "relative"
     sensitivity: float = 1.5
-    deadzone: float = 2.0  # px in camera frame
+    deadzone: float = 0.5  # camera px per frame, after smoothing
 
 @dataclass
 class KeyboardConfig:
