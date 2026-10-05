@@ -1,43 +1,47 @@
 import argparse
 
+from handing.config import loader
 from handing.core import paths
-from handing.core.clock import now_ms
-from handing.detection.landmarker import Landmarker
-from handing.input import preprocess
-from handing.input.camera import Camera
-from handing.recognition.classifier import Classifier
+from handing.output.dpi import enable_dpi_awareness
+from handing.output.dry import DryOutput
+from handing.output.estop import EmergencyStop
+from handing.output.keyboard import Keyboard
+from handing.output.mouse import Mouse
+from handing.pipeline.runner import Runner
 from handing.recognition.samples import SampleSet
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(prog = "handing", description = "print recognized gestures in the terminal")
-    p.add_argument("--camera", type = int, default = 0)
-    p.add_argument("--hands", type = int, default = 1, choices = (1, 2))
-    p.add_argument("--max-distance", type = float, default = 2.0)
+    p = argparse.ArgumentParser(prog = "handing", description = "gesture control in the terminal, dry run by default")
+    p.add_argument("--live", action = "store_true", help = "really control the pc, ctrl+alt+q toggles stop")
 
     return p.parse_args()
 
+def status_line(tick, output) -> str:
+    pred = tick.prediction
+    raw = f"{pred.name:8} {pred.confidence:.2f} {pred.distance:4.2f}" if pred else f"{'-':8} {'':4} {'':4}"
+    state = f"{tick.status.state.value:8} {tick.status.gesture or '':8}"
+
+    return f"{state} | raw {raw} | {output}"
+
 def main() -> None:
     args = parse_args()
-    classifier = Classifier(SampleSet.load(paths.default_gestures()), max_distance = args.max_distance)
+    enable_dpi_awareness()
+    cfg = loader.load()
 
-    print("ctrl+c to quit")
+    estop = EmergencyStop(cfg.safety.estop_hotkey, on_change = lambda s: print("\nSTOPPED" if s else "\nrunning"))
+    if args.live:
+        keyboard, mouse = Keyboard(estop), Mouse(estop)
+    else:
+        keyboard = mouse = DryOutput()
 
-    with Camera(args.camera) as cam, Landmarker(paths.model_path(), num_hands = args.hands) as landmarker:
+    print(f"{'live' if args.live else 'dry run'}, config {paths.config_path()}, ctrl+c to quit")
+
+    with estop, Runner(cfg, keyboard, mouse, SampleSet.load(paths.default_gestures())) as runner:
         try:
             while True:
-                frame = cam.read()
-                if frame is None:
-                    continue
-
-                rgb = preprocess.to_rgb(preprocess.fit_width(frame, 640))
-                result = landmarker.detect(rgb, now_ms())
-
-                parts = []
-                for hand in result.hands:
-                    pred = classifier.predict(hand, result.width, result.height)
-                    parts.append(f"{hand.handedness:5} {pred.name:8} conf {pred.confidence:.2f}  dist {pred.distance:.2f}")
-
-                line = "  |  ".join(parts) or "no hand"
-                print(f"\r{line:<100}", end = "", flush = True)
+                tick = runner.step()
+                if tick:
+                    output = "" if args.live else mouse
+                    print(f"\r{status_line(tick, output):<120}", end = "", flush = True)
         except KeyboardInterrupt:
             print()
