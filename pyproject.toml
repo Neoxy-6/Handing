@@ -1,7 +1,7 @@
 [project]
 name = "Handing"
 version = "0.1.0"
-description = "Control your PC with Hands"
+description = "Control PC with your Hands"
 requires-python = ">=3.10"
 
 dependencies = [
