@@ -8,10 +8,20 @@ from handing.output.mouse import BUTTONS, Mouse
 
 MACRO_PREFIX = "macro:"
 
+KEY_STEPS = ("tap", "hold", "release")
+BUTTON_STEPS = ("click", "double_click", "mouse_down", "mouse_up")
+POINT_STEPS = ("move", "move_to")
+
 @dataclass(frozen = True)
 class Step:
-    kind: str  # tap, hold, release, type, wait, click, scroll
-    value: str | int
+    kind: str
+    value: str | int | tuple[int, int]
+
+def _point(kind: str, value) -> tuple[int, int]:
+    if not (isinstance(value, list) and len(value) == 2 and all(isinstance(v, int) for v in value)):
+        raise ValueError(f"'{kind}' needs [x, y] integers, got {value!r}")
+
+    return value[0], value[1]
 
 def parse_step(raw: dict) -> Step:
     if not isinstance(raw, dict) or len(raw) != 1:
@@ -19,13 +29,21 @@ def parse_step(raw: dict) -> Step:
 
     kind, value = next(iter(raw.items()))
 
-    if kind in ("tap", "hold", "release"):
+    if kind in KEY_STEPS:
         keyboard.parse(str(value))
-    elif kind == "click" and value not in BUTTONS:
-        raise ValueError(f"unknown mouse button '{value}'")
-    elif kind in ("wait", "scroll") and not isinstance(value, int):
-        raise ValueError(f"'{kind}' needs an integer, got {value!r}")
-    elif kind not in ("type", "click", "wait", "scroll"):
+    elif kind in BUTTON_STEPS:
+        if value not in BUTTONS:
+            raise ValueError(f"unknown mouse button '{value}'")
+    elif kind in POINT_STEPS:
+        value = _point(kind, value)
+    elif kind == "scroll":
+        value = (0, value) if isinstance(value, int) else _point(kind, value)
+    elif kind == "wait":
+        if not isinstance(value, int):
+            raise ValueError(f"'wait' needs an integer, got {value!r}")
+    elif kind == "type":
+        value = str(value)
+    else:
         raise ValueError(f"unknown macro step '{kind}'")
 
     return Step(kind, value)
@@ -76,34 +94,54 @@ class ActionRunner:
         return self.run(action)
 
     def _execute(self, steps: list[Step]) -> None:
-        held: list[str] = []
+        keys: list[str] = []
+        buttons: list[str] = []
 
         try:
             for step in steps:
                 if self._kb.blocked:
                     break
 
-                if step.kind == "tap":
-                    self._kb.tap(step.value)
-                elif step.kind == "hold":
-                    self._kb.hold(step.value)
-                    held.append(step.value)
-                elif step.kind == "release":
-                    self._kb.release(step.value)
-                    held = [h for h in held if h != step.value]
-                elif step.kind == "type":
-                    self._kb.type(str(step.value))
-                elif step.kind == "click":
-                    self._mouse.click(step.value)
-                elif step.kind == "scroll":
-                    self._mouse.scroll(0, step.value)
-                elif step.kind == "wait":
-                    self._wait(step.value)
+                self._do(step, keys, buttons)
         finally:
-            for combo in reversed(held):
+            for combo in reversed(keys):
                 self._kb.release(combo)
+            for button in buttons:
+                self._mouse.release(button)
 
             self._busy.release()
+
+    def _do(self, step: Step, keys: list[str], buttons: list[str]) -> None:
+        kind, value = step.kind, step.value
+
+        if kind == "tap":
+            self._kb.tap(value)
+        elif kind == "hold":
+            self._kb.hold(value)
+            keys.append(value)
+        elif kind == "release":
+            self._kb.release(value)
+            keys[:] = [k for k in keys if k != value]
+        elif kind == "type":
+            self._kb.type(value)
+        elif kind == "click":
+            self._mouse.click(value)
+        elif kind == "double_click":
+            self._mouse.click(value, 2)
+        elif kind == "mouse_down":
+            self._mouse.press(value)
+            buttons.append(value)
+        elif kind == "mouse_up":
+            self._mouse.release(value)
+            buttons[:] = [b for b in buttons if b != value]
+        elif kind == "move":
+            self._mouse.move_by(*value)
+        elif kind == "move_to":
+            self._mouse.move_to(*value)
+        elif kind == "scroll":
+            self._mouse.scroll(*value)
+        elif kind == "wait":
+            self._wait(value)
 
     def _wait(self, ms: int) -> None:
         """sleep in small slices so the emergency stop interrupts it"""
