@@ -6,3 +6,4 @@ scripts/
 
 __pycache__/
 *.egg-info/
+recordings/
