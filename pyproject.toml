@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "nuitka"]
+dev = ["pytest", "nuitka", "psutil"]
 
 [project.scripts]
 handing = "handing.__main__:main"
