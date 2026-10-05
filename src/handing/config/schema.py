@@ -9,7 +9,7 @@ DIRECTIONS = ("left", "right", "up", "down")
 class CameraConfig:
     index: int = 0
     width: int = 640
-    mirrored: bool = True  # frames already flipped by the camera driver
+    mirrored: bool = False  # frame flipped like a mirror, by the driver or by Camera (I will test this after 
 
 @dataclass
 class DetectionConfig:
