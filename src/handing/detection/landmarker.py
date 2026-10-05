@@ -9,7 +9,7 @@ from handing.core.types import Hand, HandFrame
 SWAP = {"Left": "Right", "Right": "Left"}
 
 class Landmarker:
-    def __init__(self, model_path: Path, num_hands: int = 1, min_confidence: float = 0.5, mirrored = False):
+    def __init__(self, model_path: Path, num_hands: int = 1, min_confidence: float = 0.5, mirrored = True):
         self.mirrored = mirrored  # mediapipe labels assume mirrored input
 
         options = vision.HandLandmarkerOptions(
