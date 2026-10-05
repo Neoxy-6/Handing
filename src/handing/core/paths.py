@@ -10,3 +10,6 @@ def recordings_dir() -> Path:
     path.mkdir(exist_ok = True)
 
     return path
+
+def default_gestures() -> Path:
+    return ROOT / "assets" / "gestures" / "default.npz"
