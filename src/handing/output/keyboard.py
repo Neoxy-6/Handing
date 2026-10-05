@@ -33,11 +33,9 @@ def parse(combo: str) -> list[Key | KeyCode]:
 class Keyboard:
     """every action is skipped while the emergency stop is on (in theory)"""
 
-    def __init__(self, estop: EmergencyStop | None = None, repeat_ms: int = 300):
+    def __init__(self, estop: EmergencyStop | None = None):
         self._ctl = Controller()
         self._estop = estop
-        self.repeat_ms = repeat_ms
-        self._last: dict[str, int] = {}
 
     @property
     def blocked(self) -> bool:
@@ -53,12 +51,16 @@ class Keyboard:
         for key in reversed(keys):
             self._ctl.release(key)
 
-    def tap_repeat(self, combo: str, timestamp_ms: int) -> bool:
-        """tap at most once per repeat_ms, for held gestures; return True if tapped"""
-        if timestamp_ms - self._last.get(combo, -self.repeat_ms) < self.repeat_ms:
-            return False
+    def hold(self, combo: str) -> None:
+        if not self.blocked:
+            for key in parse(combo):
+                self._ctl.press(key)
 
-        self._last[combo] = timestamp_ms
-        self.tap(combo)
+    def release(self, combo: str) -> None:
+        """always allowed, so keys never get stuck when stop is pressed"""
+        for key in reversed(parse(combo)):
+            self._ctl.release(key)
 
-        return True
+    def type(self, text: str) -> None:
+        if not self.blocked:
+            self._ctl.type(text)
