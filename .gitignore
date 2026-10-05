@@ -1,1 +1,6 @@
 Handing.md
+
+.venv/
+
+__pycache__/
+*.egg-info/
