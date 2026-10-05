@@ -9,8 +9,8 @@ from handing.core.types import Hand, HandFrame
 SWAP = {"Left": "Right", "Right": "Left"}
 
 class Landmarker:
-    def __init__(self, model_path: Path, num_hands: int = 1, min_confidence: float = 0.5, mirrored = True):
-        self.mirrored = mirrored  # mediapipe labels assume mirrored input
+    def __init__(self, model_path: Path, num_hands: int = 1, min_confidence: float = 0.5, mirrored = False):
+        self.mirrored = mirrored  # mediapipe labels assume a raw, non-mirrored frame
 
         options = vision.HandLandmarkerOptions(
             base_options = BaseOptions(model_asset_path = str(model_path)),
@@ -46,7 +46,7 @@ class Landmarker:
 
 def _to_hand(lms, world, cats, mirrored: bool) -> Hand:
     top = cats[0]
-    handedness = top.category_name if mirrored else SWAP[top.category_name]
+    handedness = SWAP[top.category_name] if mirrored else top.category_name
 
     return Hand(
         landmarks = np.array([(p.x, p.y, p.z) for p in lms], dtype = np.float32),
