@@ -1,0 +1,83 @@
+from dataclasses import dataclass, field
+
+MODES = ("mouse", "lock", "scroll", "trigger", "action")
+MOUSE_MODES = ("relative", "absolute", "joystick")
+POINTS = ("palm", "index")
+DIRECTIONS = ("left", "right", "up", "down")
+
+@dataclass
+class CameraConfig:
+    index: int = 0
+    width: int = 640
+    mirrored: bool = True  # frames already flipped by the camera driver
+
+@dataclass
+class DetectionConfig:
+    hands: int = 1
+    min_confidence: float = 0.5
+
+@dataclass
+class RecognitionConfig:
+    k: int = 5
+    max_distance: float = 2.0
+
+@dataclass
+class StabilityConfig:
+    enter_frames: int = 4
+    exit_frames: int = 6
+    min_confidence: float = 0.8
+
+@dataclass
+class CursorConfig:
+    point: str = "palm"
+    min_cutoff: float = 0.5
+    beta: float = 0.02
+
+@dataclass
+class SafetyConfig:
+    estop_hotkey: str = "<ctrl>+<alt>+q"
+    unlock_gesture: str = "paper"
+    unlock_frames: int = 15
+
+@dataclass
+class MouseConfig:
+    mode: str = "relative"
+    sensitivity: float = 1.5
+    deadzone: float = 2.0  # px in camera frame
+
+@dataclass
+class KeyboardConfig:
+    repeat_ms: int = 300
+
+@dataclass
+class GestureConfig:
+    mode: str
+    sensitivity: float = 1.0  # scroll
+    threshold: float = 0.15  # trigger, fraction of frame width
+    left: str | None = None
+    right: str | None = None
+    up: str | None = None
+    down: str | None = None
+    action: str | None = None  # action mode
+    repeat: bool = False  # action mode, re-run while held
+
+def default_gestures() -> dict[str, GestureConfig]:
+    return {
+        "point": GestureConfig("mouse"),
+        "fist": GestureConfig("lock"),
+        "peace": GestureConfig("scroll"),
+        "paper": GestureConfig("trigger", left = "ctrl+win+left", right = "ctrl+win+right", up = "pgup", down = "pgdn"),
+    }
+
+@dataclass
+class Config:
+    camera: CameraConfig = field(default_factory = CameraConfig)
+    detection: DetectionConfig = field(default_factory = DetectionConfig)
+    recognition: RecognitionConfig = field(default_factory = RecognitionConfig)
+    stability: StabilityConfig = field(default_factory = StabilityConfig)
+    cursor: CursorConfig = field(default_factory = CursorConfig)
+    safety: SafetyConfig = field(default_factory = SafetyConfig)
+    mouse: MouseConfig = field(default_factory = MouseConfig)
+    keyboard: KeyboardConfig = field(default_factory = KeyboardConfig)
+    macros: dict[str, list] = field(default_factory = dict)  # raw steps, see output/macro.py
+    gestures: dict[str, GestureConfig] = field(default_factory = default_gestures)
