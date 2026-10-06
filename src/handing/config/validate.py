@@ -1,6 +1,6 @@
 from pynput.keyboard import HotKey
 
-from handing.config.schema import DIRECTIONS, MODES, MOUSE_MODES, POINTS, Config
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, MOUSE_MODES, POINTS, Config
 from handing.output.macro import check_action, parse_macro
 
 def _one_of(value, options, where: str) -> None:
@@ -14,6 +14,7 @@ def _positive(value, where: str) -> None:
 def validate(config: Config) -> None:
     """raise ValueError with the config path of the first problem"""
     _one_of(config.detection.hands, (1, 2), "detection.hands")
+    _one_of(config.detection.control_hand, CONTROL_HANDS, "detection.control_hand")
     _one_of(config.cursor.point, POINTS, "cursor.point")
     _one_of(config.mouse.mode, MOUSE_MODES, "mouse.mode")
 

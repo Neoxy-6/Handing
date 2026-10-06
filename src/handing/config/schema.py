@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 MODES = ("mouse", "lock", "scroll", "trigger", "action")
 MOUSE_MODES = ("relative", "absolute", "joystick")
 POINTS = ("palm", "index")
+CONTROL_HANDS = ("any", "left", "right")
 DIRECTIONS = ("left", "right", "up", "down")
 
 @dataclass
@@ -16,6 +17,7 @@ class CameraConfig:
 class DetectionConfig:
     hands: int = 1
     min_confidence: float = 0.5
+    control_hand: str = "any"  # left / right ignores the other hand, detection then always looks for two
 
 @dataclass
 class RecognitionConfig:
