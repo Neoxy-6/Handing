@@ -3,6 +3,7 @@ import time
 from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from handing.gui.frame_view import FrameView
+from handing.gui.gesture_panel import GesturePanel
 from handing.gui.render import draw_hands
 from handing.gui.worker import Worker
 
@@ -34,7 +35,8 @@ class MainWindow(QMainWindow):
 
         side = QVBoxLayout()
         side.addLayout(info)
-        side.addStretch()
+        side.addWidget(QLabel("gestures"))
+        side.addWidget(GesturePanel(worker))
         side.addWidget(QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} toggles output"))
         side.addWidget(self.output)
 
