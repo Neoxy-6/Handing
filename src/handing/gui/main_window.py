@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
         side.addLayout(info)
         side.addWidget(QLabel("gestures"))
         side.addWidget(GesturePanel(worker))
-        settings = QPushButton("settings")
+        settings = QPushButton("app settings")
         settings.clicked.connect(self.open_settings)
         side.addWidget(settings)
         side.addWidget(QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} toggles output"))

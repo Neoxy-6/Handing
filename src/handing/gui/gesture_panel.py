@@ -13,16 +13,16 @@ class GesturePanel(QWidget):
 
         self.list = QListWidget()
         buttons = QGridLayout()
-        for i, (text, slot) in enumerate([
-            ("settings", self.settings),
-            ("add", self.add),
-            ("record more", self.record_more),
-            ("rename", self.rename),
-            ("delete", self.delete),
-        ]):
+        for text, slot, row, col, span in [
+            ("edit gesture", self.settings, 0, 0, 2),
+            ("add", self.add, 1, 0, 1),
+            ("record more", self.record_more, 1, 1, 1),
+            ("rename", self.rename, 2, 0, 1),
+            ("delete", self.delete, 2, 1, 1),
+        ]:
             button = QPushButton(text)
             button.clicked.connect(slot)
-            buttons.addWidget(button, (i + 1) // 2, (i + 1) % 2, 1, 2 if i == 0 else 1)
+            buttons.addWidget(button, row, col, 1, span)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
