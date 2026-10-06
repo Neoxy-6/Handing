@@ -23,6 +23,7 @@ STATE_COLORS = {
 SHEET = f"""
 QWidget {{ background: {BG}; color: {TEXT}; font-size: 13px; }}
 QLabel {{ background: transparent; }}
+QLabel:disabled {{ color: #5c5c64; }}
 QLabel[role="muted"] {{ color: {MUTED}; font-size: 12px; }}
 QLabel[role="title"] {{ color: {MUTED}; font-size: 11px; font-weight: 600; letter-spacing: 1px; }}
 QFrame#card {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 10px; }}
@@ -35,6 +36,7 @@ QPushButton:pressed {{ background: #27272c; }}
 QPushButton[role="primary"] {{ background: {ACCENT}; border-color: {ACCENT}; color: white; }}
 QPushButton[role="primary"]:hover {{ background: #5592f7; }}
 QPushButton[role="danger"] {{ background: {DANGER}; border-color: {DANGER}; color: white; font-weight: 600; }}
+QPushButton:disabled {{ background: #232327; color: #5c5c64; border-color: #2c2c31; }}
 
 QTreeWidget {{ background: transparent; border: none; outline: none; show-decoration-selected: 1; }}
 QTreeWidget::item {{ padding: 6px 2px; border: none; }}
@@ -51,6 +53,11 @@ QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
     background: #2a2a30; border: 1px solid {BORDER}; border-radius: 5px; padding: 4px 6px;
 }}
 QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {{ border-color: {ACCENT}; }}
+QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QLineEdit:disabled {{
+    background: #1f1f23; color: #5c5c64; border-color: #2c2c31;
+}}
+QCheckBox:disabled {{ color: #5c5c64; }}
+QCheckBox::indicator:disabled {{ background: #1f1f23; border-color: #3a3a40; }}
 QComboBox {{ padding-right: 24px; }}
 QComboBox::drop-down {{ border: none; width: 22px; }}
 QComboBox::down-arrow {{ image: url({ICONS}/down.svg); width: 10px; height: 10px; }}

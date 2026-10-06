@@ -95,6 +95,7 @@ class SettingsDialog(QDialog):
         self.cfg = cfg
         self.gesture_names = gesture_names
         self.rows = []
+        self.labels = {}
 
         tabs = QTabWidget()
         for title, note, rows in pages(gesture_names):
@@ -104,7 +105,8 @@ class SettingsDialog(QDialog):
                 set_value(widget, getattr(getattr(cfg, section), name))
                 widget.setToolTip(tip)
                 form.addRow(label, widget)
-                form.labelForField(widget).setToolTip(tip)
+                self.labels[widget] = form.labelForField(widget)
+                self.labels[widget].setToolTip(tip)
                 self.rows.append((section, name, widget))
             if note:
                 form.addRow(QLabel(note))
@@ -126,15 +128,22 @@ class SettingsDialog(QDialog):
 
         lock = widgets["safety", "lock"]
         unlock_rows = [widgets["safety", "unlock_gesture"], widgets["safety", "unlock_frames"]]
-        lock.toggled.connect(lambda on: [w.setEnabled(on) for w in unlock_rows])
+        lock.toggled.connect(lambda on: [self._enable(w, on) for w in unlock_rows])
         lock.toggled.emit(lock.isChecked())
 
     def _sync_hands(self, control: str) -> None:
-        """a chosen control hand needs both hands detected, or the other one may hide it"""
-        if control != "any":
-            self._hands.setCurrentText("2")
+        """one hand controls; the runner still detects two internally to find it"""
+        locked = control != "any"
+        if locked:
+            self._hands.setCurrentText("1")
 
-        self._hands.setEnabled(control == "any")
+        self._enable(self._hands, not locked)
+        self._hands.setToolTip(f"only the {control} hand controls" if locked else "how many hands to detect")
+
+    def _enable(self, widget, on: bool) -> None:
+        """grey out the label too, so the row clearly reads as off"""
+        widget.setEnabled(on)
+        self.labels[widget].setEnabled(on)
 
     def result_config(self) -> Config:
         new = copy.deepcopy(self.cfg)
