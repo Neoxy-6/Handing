@@ -1,5 +1,6 @@
 import time
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from handing.gui.frame_view import FrameView
@@ -12,12 +13,15 @@ def pretty_hotkey(hotkey: str) -> str:
     return "+".join(k.strip("<>").capitalize() for k in hotkey.split("+"))
 
 class MainWindow(QMainWindow):
+    visibility_changed = Signal(bool)
+
     def __init__(self, worker: Worker):
         super().__init__()
         self.setWindowTitle("Handing")
         self.resize(960, 540)
 
         self.worker = worker
+        self.quitting = False  # set before QApplication.quit so close really closes
         self.view = FrameView()
         self.state = QLabel("-")
         self.gesture = QLabel("-")
@@ -80,7 +84,20 @@ class MainWindow(QMainWindow):
     def on_failed(self, message: str) -> None:
         QMessageBox.critical(self, "Handing", message)
 
+    def showEvent(self, event) -> None:
+        self.visibility_changed.emit(True)
+        super().showEvent(event)
+
+    def hideEvent(self, event) -> None:
+        if not self.quitting:
+            self.visibility_changed.emit(False)
+        super().hideEvent(event)
+
     def closeEvent(self, event) -> None:
         """hide to tray, quit from the tray menu"""
+        if self.quitting:
+            super().closeEvent(event)
+            return
+
         event.ignore()
         self.hide()

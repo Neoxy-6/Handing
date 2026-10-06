@@ -77,6 +77,7 @@ class Tray(QSystemTrayIcon):
         self.window.activateWindow()
 
     def quit(self) -> None:
+        self.window.quitting = True
         self.worker.stop()
         self.hide()
         QApplication.quit()

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from handing.config import loader
 from handing.core import paths
 from handing.gui.main_window import MainWindow
+from handing.gui.overlay import Overlay
 from handing.gui.tray import Tray
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import GestureEditor
@@ -35,6 +36,8 @@ def main() -> int:
     window = MainWindow(worker)
     tray = Tray(window, worker)
     tray.show()
+    overlay = Overlay(worker)
+    window.visibility_changed.connect(lambda visible: overlay.set_enabled(not visible))
     window.show()
     worker.start()
 
