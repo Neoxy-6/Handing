@@ -1,10 +1,11 @@
+from handing.config.keys import split_key
 from handing.control.states import State, Status
 
 LOCK_MODE = "lock"
 
 class StateMachine:
     def __init__(self, modes: dict[str, str], unlock_gesture: str, unlock_frames: int = 15, relock_ms: int = 5000):
-        """modes: gesture name -> mode name from config"""
+        """modes: config key (gesture or gesture@hand) -> mode name"""
         self.modes = modes
         self.unlock_gesture = unlock_gesture
         self.unlock_frames = unlock_frames
@@ -15,10 +16,10 @@ class StateMachine:
         self._locked = True  # state to resume after standby
         self._standby_since = 0
         self._unlock_streak = 0
-        self._ignore: str | None = None  # gesture held while unlocking, ignored until it changes
+        self._ignore: str | None = None  # gesture name held while unlocking, ignored on both hands until it changes
 
     def update(self, gesture: str | None, timestamp_ms: int) -> Status:
-        """gesture: stable name after filtering, None when no hand"""
+        """gesture: config key of the stable gesture, None when no hand"""
         before = (self.state, self.gesture)
 
         if gesture is None:
@@ -49,17 +50,19 @@ class StateMachine:
             self._lock()
             return
 
+        name = split_key(gesture)[0]
+
         if self.state == State.LOCKED:
-            self._unlock_streak = self._unlock_streak + 1 if gesture == self.unlock_gesture else 0
+            self._unlock_streak = self._unlock_streak + 1 if name == self.unlock_gesture else 0  # either hand unlocks
             if self._unlock_streak >= self.unlock_frames:
-                self._ignore = gesture
+                self._ignore = name
                 self._set(State.IDLE)
             return
 
-        if gesture != self._ignore:
+        if name != self._ignore:
             self._ignore = None
 
-        if mode is None or gesture == self._ignore:
+        if mode is None or name == self._ignore:
             self._set(State.IDLE)
         else:
             self._set(State.ACTIVE, gesture)

@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from handing.config import loader
+from handing.config.keys import SEP, make_key, split_key, variants
 from handing.config.schema import Config, GestureConfig
 from handing.recognition.classifier import UNKNOWN
 from handing.recognition.samples import SampleSet
@@ -11,6 +12,8 @@ def check_name(name: str, existing: list[str]) -> str | None:
     """return an error message, or None when the name is usable"""
     if not name.strip():
         return "name is empty"
+    if SEP in name:
+        return f"'{SEP}' is not allowed in names"
     if name == UNKNOWN:
         return f"'{UNKNOWN}' is reserved"
     if name in existing:
@@ -35,24 +38,28 @@ class GestureEditor:
 
     def delete(self, name: str) -> None:
         self.samples.delete(name)
-        self.cfg.gestures.pop(name, None)
+        for key in variants(self.cfg.gestures, name):
+            self.cfg.gestures.pop(key)
         self._save()
 
     def rename(self, old: str, new: str) -> None:
         self.samples.rename(old, new)
-        self.cfg.gestures = {new if k == old else k: v for k, v in self.cfg.gestures.items()}
+        self.cfg.gestures = {
+            make_key(new, split_key(k)[1]) if split_key(k)[0] == old else k: v
+            for k, v in self.cfg.gestures.items()
+        }
 
         if self.cfg.safety.unlock_gesture == old:
             self.cfg.safety.unlock_gesture = new
 
         self._save()
 
-    def set_gesture(self, name: str, gesture: GestureConfig | None) -> None:
-        """None removes the mapping, the gesture is still recognized but does nothing"""
+    def set_gesture(self, key: str, gesture: GestureConfig | None) -> None:
+        """key is name or name@hand; None removes that mapping"""
         if gesture is None:
-            self.cfg.gestures.pop(name, None)
+            self.cfg.gestures.pop(key, None)
         else:
-            self.cfg.gestures[name] = gesture
+            self.cfg.gestures[key] = gesture
 
         loader.save(self.cfg)
 

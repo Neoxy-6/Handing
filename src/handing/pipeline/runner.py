@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from handing.config.keys import resolve
 from handing.config.schema import Config
 from handing.control.fsm import StateMachine
 from handing.control.modes.base import Mode
@@ -74,7 +75,8 @@ class Runner:
 
         self.throttle.saw_hand()
         pred = self.classifier.predict(hand, hands.width, hands.height)
-        status = self.fsm.update(self.hyst.update(pred.name, pred.confidence), t)
+        stable = self.hyst.update(pred.name, pred.confidence)
+        status = self.fsm.update(resolve(self.cfg.gestures, stable, hand.handedness), t)
 
         point = self._point(hand, hands)
         mode = self.modes.get(status.gesture) if status.state == State.ACTIVE else None
