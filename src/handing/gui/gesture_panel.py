@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QGridLayout, QInputDialog, QListWidget, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
+from handing.gui.gesture_settings import GestureSettings
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import check_name
@@ -13,6 +14,7 @@ class GesturePanel(QWidget):
         self.list = QListWidget()
         buttons = QGridLayout()
         for i, (text, slot) in enumerate([
+            ("settings", self.settings),
             ("add", self.add),
             ("record more", self.record_more),
             ("rename", self.rename),
@@ -20,19 +22,24 @@ class GesturePanel(QWidget):
         ]):
             button = QPushButton(text)
             button.clicked.connect(slot)
-            buttons.addWidget(button, i // 2, i % 2)
+            buttons.addWidget(button, (i + 1) // 2, (i + 1) % 2, 1, 2 if i == 0 else 1)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.list)
         layout.addLayout(buttons)
 
+        self.list.itemDoubleClicked.connect(self.settings)
         worker.samples_changed.connect(self.show_counts)
 
     def show_counts(self, counts: dict[str, int]) -> None:
         self.names = list(counts)
         self.list.clear()
-        self.list.addItems([f"{name}  ({n} samples)" for name, n in counts.items()])
+        gestures = self.worker.cfg.gestures
+
+        for name, n in counts.items():
+            mode = gestures[name].mode if name in gestures else "-"
+            self.list.addItem(f"{name}  [{mode}]  ({n} samples)")
 
     def selected(self) -> str | None:
         row = self.list.currentRow()
@@ -50,6 +57,15 @@ class GesturePanel(QWidget):
             return None
 
         return name
+
+    def settings(self) -> None:
+        name = self.selected()
+        if not name:
+            return
+
+        dialog = GestureSettings(self.worker.cfg, name, self)
+        if dialog.exec():
+            self.worker.configure(name, dialog.result_gesture())
 
     def add(self) -> None:
         name = self.ask_name("add gesture")
