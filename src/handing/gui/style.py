@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from handing.control.states import State
+
+ICONS = (Path(__file__).parent / "icons").as_posix()
 
 BG = "#18181b"
 SURFACE = "#232327"
@@ -32,8 +36,9 @@ QPushButton[role="primary"] {{ background: {ACCENT}; border-color: {ACCENT}; col
 QPushButton[role="primary"]:hover {{ background: #5592f7; }}
 QPushButton[role="danger"] {{ background: {DANGER}; border-color: {DANGER}; color: white; font-weight: 600; }}
 
-QTreeWidget {{ background: transparent; border: none; outline: none; }}
-QTreeWidget::item {{ padding: 6px 2px; border-radius: 4px; }}
+QTreeWidget {{ background: transparent; border: none; outline: none; show-decoration-selected: 1; }}
+QTreeWidget::item {{ padding: 6px 2px; border: none; }}
+QTreeWidget::item:hover {{ background: #2a2a30; }}
 QTreeWidget::item:selected {{ background: #2f3a52; color: {TEXT}; }}
 QHeaderView {{ background: transparent; border: none; }}
 QHeaderView::section {{ background: transparent; color: {MUTED}; border: none; padding: 2px; font-size: 11px; }}
@@ -41,6 +46,26 @@ QHeaderView::section {{ background: transparent; color: {MUTED}; border: none; p
 QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
     background: #2a2a30; border: 1px solid {BORDER}; border-radius: 5px; padding: 4px 6px;
 }}
+QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {{ border-color: {ACCENT}; }}
+QComboBox {{ padding-right: 24px; }}
+QComboBox::drop-down {{ border: none; width: 22px; }}
+QComboBox::down-arrow {{ image: url({ICONS}/down.svg); width: 10px; height: 10px; }}
+QComboBox QAbstractItemView {{
+    background: {SURFACE}; border: 1px solid {BORDER}; outline: none; selection-background-color: #2f3a52;
+}}
+QSpinBox, QDoubleSpinBox {{ padding-right: 22px; }}
+QSpinBox::up-button, QDoubleSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::down-button {{
+    subcontrol-origin: border; width: 20px; border: none; background: transparent;
+}}
+QSpinBox::up-button, QDoubleSpinBox::up-button {{ subcontrol-position: top right; }}
+QSpinBox::down-button, QDoubleSpinBox::down-button {{ subcontrol-position: bottom right; }}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{ image: url({ICONS}/up.svg); width: 9px; height: 9px; }}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{ image: url({ICONS}/down.svg); width: 9px; height: 9px; }}
+
+QCheckBox {{ spacing: 8px; background: transparent; }}
+QCheckBox::indicator {{ width: 16px; height: 16px; border: 1px solid #5a5a63; border-radius: 4px; background: #2a2a30; }}
+QCheckBox::indicator:hover {{ border-color: {ACCENT}; }}
+QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; image: url({ICONS}/check.svg); }}
 QTabWidget::pane {{ border: 1px solid {BORDER}; border-radius: 6px; }}
 QTabBar::tab {{ background: transparent; color: {MUTED}; padding: 6px 12px; }}
 QTabBar::tab:selected {{ color: {TEXT}; border-bottom: 2px solid {ACCENT}; }}
