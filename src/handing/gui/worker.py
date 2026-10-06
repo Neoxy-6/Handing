@@ -1,8 +1,10 @@
 import queue
+from dataclasses import fields
 
 from PySide6.QtCore import QThread, Signal
 
-from handing.config.schema import GestureConfig
+from handing.config import loader
+from handing.config.schema import Config, GestureConfig
 from handing.features.normalize import normalize
 from handing.output.estop import EmergencyStop
 from handing.output.keyboard import Keyboard
@@ -32,6 +34,7 @@ class Worker(QThread):
         self._record_name: str | None = None
         self._record_count = 0
         self._poses: list = []
+        self._restart = False
 
     def set_output(self, live: bool) -> None:
         self.estop.set_stopped(not live)
@@ -55,23 +58,33 @@ class Worker(QThread):
     def configure(self, name: str, gesture: GestureConfig | None) -> None:
         self._jobs.put(lambda runner: self._edit(runner, self.editor.set_gesture, name, gesture))
 
+    def apply_config(self, new: Config) -> None:
+        """global settings, the pipeline restarts so camera and detection changes apply too"""
+        self._jobs.put(lambda runner: self._apply(new))
+
     def run(self) -> None:
         keyboard, mouse = Keyboard(self.estop), Mouse(self.estop)
 
         try:
-            with self.estop, Runner(self.cfg, keyboard, mouse, self.editor.samples) as runner:
-                self.samples_changed.emit(self.editor.counts())
-
+            with self.estop:
                 while not self.isInterruptionRequested():
-                    while not self._jobs.empty():
-                        self._jobs.get()(runner)
-
-                    tick = runner.step()
-                    if tick:
-                        self._collect(runner, tick)
-                        self.tick.emit(tick)
+                    self._restart = False
+                    with Runner(self.cfg, keyboard, mouse, self.editor.samples) as runner:
+                        self._loop(runner)
         except Exception as e:
             self.failed.emit(str(e))
+
+    def _loop(self, runner: Runner) -> None:
+        self.samples_changed.emit(self.editor.counts())
+
+        while not (self.isInterruptionRequested() or self._restart):
+            while not self._jobs.empty():
+                self._jobs.get()(runner)
+
+            tick = runner.step()
+            if tick:
+                self._collect(runner, tick)
+                self.tick.emit(tick)
 
     def stop(self) -> None:
         self.requestInterruption()
@@ -97,6 +110,14 @@ class Worker(QThread):
     def _add(self, runner: Runner, name: str, poses: list) -> None:
         self.editor.add(name, poses)
         self._refresh(runner)
+
+    def _apply(self, new: Config) -> None:
+        for f in fields(Config):
+            if f.name not in ("gestures", "macros"):
+                setattr(self.cfg, f.name, getattr(new, f.name))
+
+        loader.save(self.cfg)
+        self._restart = True
 
     def _edit(self, runner: Runner, change, *args) -> None:
         change(*args)
