@@ -8,6 +8,7 @@ dependencies = [
     "mediapipe>=1.0",
     "pynput",
     "pyyaml",
+    "PySide6-Essentials",
 ]
 
 [project.optional-dependencies]
