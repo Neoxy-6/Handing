@@ -31,8 +31,7 @@ class GesturePanel(QFrame):
         self.setObjectName("card")
 
         self.list = QTreeWidget()
-        self.list.setHeaderLabels(["gesture", "mode", "samples"])
-        self.list.headerItem().setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.list.setHeaderLabels(["gesture", "mode"])
         self.list.setRootIsDecorated(False)
         self.list.setUniformRowHeights(True)
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -41,7 +40,6 @@ class GesturePanel(QFrame):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         buttons = QGridLayout()
         buttons.setSpacing(6)
@@ -75,9 +73,9 @@ class GesturePanel(QFrame):
         gestures = self.worker.cfg.gestures
 
         for name, n in counts.items():
-            item = QTreeWidgetItem([name, mode_summary(gestures, name), str(n)])
+            item = QTreeWidgetItem([name, mode_summary(gestures, name)])
+            item.setToolTip(0, f"{n} samples")
             item.setToolTip(1, item.text(1))
-            item.setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.list.addTopLevelItem(item)
 
     def selected(self) -> str | None:
