@@ -1,20 +1,24 @@
+import copy
+
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout,
     QLabel, QMessageBox, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import DIRECTIONS, MODES, Config, GestureConfig
-import copy
-
+from handing.config.keys import make_key
 from handing.config.lint import lint
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, Config, GestureConfig
 from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
 from handing.gui.confirm import confirm_warnings
 from handing.output.macro import parse_macro
 
 NONE = "(none)"
+NONE_HINTS = {
+    "any": "recognized, but does nothing",
+    "side": "no override, this hand uses the 'any' setting",
+}
 HINTS = {
-    NONE: "recognized, but does nothing",
     "mouse": "hand movement moves the cursor\nsensitivity and deadzone are global, in config.yaml",
     "lock": "locks control until the unlock gesture is held",
 }
@@ -44,8 +48,15 @@ class GestureSettings(QDialog):
         self.name = name
         self.gesture_names = gesture_names
         macros = {n: parse_macro(steps) for n, steps in cfg.macros.items()}
-        current = cfg.gestures.get(name)
 
+        self.hand = QComboBox()
+        self.hand.addItems(CONTROL_HANDS)
+        control = cfg.detection.control_hand
+        for i, hand in enumerate(CONTROL_HANDS):
+            if control != "any" and hand not in ("any", control):
+                self.hand.model().item(i).setEnabled(False)  # that hand never controls
+
+        self.none_hint = QLabel(NONE_HINTS["any"])
         self.mode = QComboBox()
         self.mode.addItems([NONE, *MODES])
         self.pages = QStackedWidget()
@@ -62,6 +73,8 @@ class GestureSettings(QDialog):
                 page = form_page(("threshold", self.threshold), *self.directions.items())
             elif mode == "action":
                 page = form_page(("action", self.action), ("", self.repeat))
+            elif mode == NONE:
+                page = form_page(("", self.none_hint))
             else:
                 page = form_page(("", QLabel(HINTS[mode])))
             self.pages.addWidget(page)
@@ -71,12 +84,20 @@ class GestureSettings(QDialog):
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(form_page(("mode", self.mode)))
+        layout.addWidget(form_page(("hand", self.hand), ("mode", self.mode)))
         layout.addWidget(self.pages)
         layout.addWidget(buttons)
 
         self.mode.currentIndexChanged.connect(self.pages.setCurrentIndex)
-        self._load(current or GestureConfig(NONE))
+        self.hand.currentTextChanged.connect(self._load_hand)
+        self._load_hand("any")
+
+    def key(self) -> str:
+        return make_key(self.name, self.hand.currentText())
+
+    def _load_hand(self, hand: str) -> None:
+        self.none_hint.setText(NONE_HINTS["any" if hand == "any" else "side"])
+        self._load(self.cfg.gestures.get(self.key()) or GestureConfig(NONE))
 
     def _load(self, g: GestureConfig) -> None:
         self.mode.setCurrentText(g.mode)
@@ -124,9 +145,9 @@ class GestureSettings(QDialog):
         candidate = copy.deepcopy(self.cfg)
         gesture = self.result_gesture()
         if gesture is None:
-            candidate.gestures.pop(self.name, None)
+            candidate.gestures.pop(self.key(), None)
         else:
-            candidate.gestures[self.name] = gesture
+            candidate.gestures[self.key()] = gesture
 
         if not error:
             try:

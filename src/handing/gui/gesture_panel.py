@@ -1,10 +1,20 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
+from handing.config.keys import split_key, variants
 from handing.gui.gesture_settings import GestureSettings
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import check_name
+
+def mode_summary(gestures: dict, name: str) -> str:
+    """'mouse · L trigger' for a gesture with a left hand override"""
+    parts = []
+    for key in sorted(variants(gestures, name), key = lambda k: ("any", "left", "right").index(split_key(k)[1])):
+        hand = split_key(key)[1]
+        parts.append(gestures[key].mode if hand == "any" else f"{hand[0].upper()} {gestures[key].mode}")
+
+    return "  ·  ".join(parts) or "-"
 
 class GesturePanel(QFrame):
     def __init__(self, worker: Worker):
@@ -19,9 +29,12 @@ class GesturePanel(QFrame):
         self.list.headerItem().setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.list.setRootIsDecorated(False)
         self.list.setUniformRowHeights(True)
+        self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list.setTextElideMode(Qt.TextElideMode.ElideRight)
         header = self.list.header()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         buttons = QGridLayout()
@@ -56,8 +69,8 @@ class GesturePanel(QFrame):
         gestures = self.worker.cfg.gestures
 
         for name, n in counts.items():
-            mode = gestures[name].mode if name in gestures else "-"
-            item = QTreeWidgetItem([name, mode, str(n)])
+            item = QTreeWidgetItem([name, mode_summary(gestures, name), str(n)])
+            item.setToolTip(1, item.text(1))
             item.setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.list.addTopLevelItem(item)
 
@@ -86,7 +99,7 @@ class GesturePanel(QFrame):
 
         dialog = GestureSettings(self.worker.cfg, name, self.names, self)
         if dialog.exec():
-            self.worker.configure(name, dialog.result_gesture())
+            self.worker.configure(dialog.key(), dialog.result_gesture())
 
     def add(self) -> None:
         name = self.ask_name("add gesture")

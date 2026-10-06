@@ -41,6 +41,10 @@ QTreeWidget::item {{ padding: 6px 2px; border: none; }}
 QTreeWidget::item:hover {{ background: #2a2a30; }}
 QTreeWidget::item:selected {{ background: #2f3a52; color: {TEXT}; }}
 QHeaderView {{ background: transparent; border: none; }}
+QScrollBar:vertical {{ background: transparent; width: 8px; margin: 0; }}
+QScrollBar::handle:vertical {{ background: #45454d; border-radius: 4px; min-height: 24px; }}
+QScrollBar::handle:vertical:hover {{ background: #55555e; }}
+QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page {{ height: 0; background: none; }}
 QHeaderView::section {{ background: transparent; color: {MUTED}; border: none; padding: 2px; font-size: 11px; }}
 
 QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
