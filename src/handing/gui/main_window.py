@@ -3,7 +3,10 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPu
 
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
-from handing.gui.render import draw_hands
+from handing.control.modes.build import stick_area
+from handing.control.states import State
+from handing.features import anchor
+from handing.gui.render import draw_hands, draw_stick
 from handing.gui.settings_dialog import SettingsDialog
 from handing.gui.status_card import StatusCard
 from handing.gui.style import set_role
@@ -72,8 +75,22 @@ class MainWindow(QMainWindow):
         if not self.isVisible():
             return
 
-        self.view.show_frame(draw_hands(tick.frame.copy(), tick.hands))
+        frame = draw_hands(tick.frame.copy(), tick.hands)
+        self._draw_stick(frame, tick)
+        self.view.show_frame(frame)
         self.status.update_tick(tick)
+
+    def _draw_stick(self, frame, tick) -> None:
+        """show the joystick guide while a joystick gesture runs"""
+        cfg = self.worker.cfg
+        g = cfg.gestures.get(tick.status.gesture or "")
+        if tick.status.state != State.ACTIVE or g is None or g.mode != "joystick":
+            return
+
+        center, radius = stick_area(cfg.camera.width)
+        point_of = anchor.palm_center if cfg.cursor.point == "palm" else anchor.index_tip
+        point = point_of(tick.hand) * (tick.hands.width, tick.hands.height) if tick.hand else None
+        draw_stick(frame, center, radius, cfg.cursor.joystick_deadzone, point)
 
     def on_output_changed(self, live: bool) -> None:
         self.output.blockSignals(True)
