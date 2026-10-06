@@ -27,3 +27,9 @@ def lint(cfg: Config, gesture_names: list[str]) -> list[str]:
         out.append(f"{', '.join(unlock)} locks, that hand cannot unlock with '{cfg.safety.unlock_gesture}'")
 
     return out
+
+def new_warnings(old: Config, new: Config, old_names: list[str], new_names: list[str] | None = None) -> list[str]:
+    """only what a change makes worse, so known issues do not nag on every save"""
+    before = set(lint(old, old_names))
+
+    return [w for w in lint(new, old_names if new_names is None else new_names) if w not in before]

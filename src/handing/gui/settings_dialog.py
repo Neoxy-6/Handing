@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from handing.config.schema import CONTROL_HANDS, POINTS, Config
-from handing.config.lint import lint
+from handing.config.lint import new_warnings
 from handing.config.validate import validate
 from handing.gui.confirm import confirm_warnings
 
@@ -147,5 +147,5 @@ class SettingsDialog(QDialog):
             QMessageBox.warning(self, "settings", str(e))
             return
 
-        if confirm_warnings(self, "settings", lint(new, self.gesture_names)):
+        if confirm_warnings(self, "settings", new_warnings(self.cfg, new, self.gesture_names)):
             super().accept()

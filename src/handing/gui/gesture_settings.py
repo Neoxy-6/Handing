@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from handing.config.keys import make_key
-from handing.config.lint import lint
+from handing.config.lint import new_warnings
 from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, Config, GestureConfig
 from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
@@ -159,5 +159,5 @@ class GestureSettings(QDialog):
             QMessageBox.warning(self, self.windowTitle(), error)
             return
 
-        if confirm_warnings(self, self.windowTitle(), lint(candidate, self.gesture_names)):
+        if confirm_warnings(self, self.windowTitle(), new_warnings(self.cfg, candidate, self.gesture_names)):
             super().accept()

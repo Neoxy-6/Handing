@@ -1,7 +1,10 @@
+import copy
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
 from handing.config.keys import split_key, variants
+from handing.config.lint import new_warnings
 from handing.gui.gesture_settings import GestureSettings
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
@@ -122,9 +125,15 @@ class GesturePanel(QFrame):
         if not name:
             return
 
+        cfg = self.worker.cfg
+        after = copy.deepcopy(cfg)
+        for key in variants(after.gestures, name):
+            after.gestures.pop(key)
+
+        warnings = new_warnings(cfg, after, self.names, [n for n in self.names if n != name])
         text = f"delete '{name}' and all its samples?"
-        if name == self.worker.cfg.safety.unlock_gesture:
-            text += f"\n\n'{name}' is the unlock gesture, pick another one in app settings or control can never be unlocked."
+        if warnings:
+            text += "\n\n" + "\n".join(f"- {w}" for w in warnings)
 
         if QMessageBox.question(self, "delete gesture", text) == QMessageBox.StandardButton.Yes:
             self.worker.delete(name)
