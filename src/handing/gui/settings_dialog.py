@@ -51,8 +51,16 @@ def set_value(widget, value) -> None:
     else:
         widget.setText(str(value))
 
+def group_title(text: str, first: bool) -> QLabel:
+    title = QLabel(text)
+    title.setProperty("role", "title")
+    if not first:
+        title.setContentsMargins(0, 10, 0, 0)
+
+    return title
+
 def pages(gesture_names: list[str]) -> list:
-    """tab title, note, rows of (section, field, label, tooltip, widget)"""
+    """tab title, note, rows of (section, field, label, tooltip, widget) or a group title string"""
     return [
         ("camera", "reopens the camera", [
             ("camera", "index", "camera", "camera index, 0 is the first one", int_box(0, 9)),
@@ -63,14 +71,16 @@ def pages(gesture_names: list[str]) -> list:
             ("detection", "min_confidence", "confidence", "minimum detection confidence", float_box(0.1, 0.95, 0.05)),
         ]),
         ("cursor", "", [
+            "GENERAL",
             ("cursor", "point", "point", "the part of the hand that drives the cursor", choice(*POINTS)),
             ("mouse", "sensitivity", "sensitivity", "1 = moving across the whole frame crosses the whole screen", float_box(0.2, 10, 0.1)),
             ("mouse", "deadzone", "deadzone", "camera px per frame ignored, stops jitter", float_box(0, 5, 0.1)),
             ("cursor", "min_cutoff", "smoothing", "one euro min cutoff, lower is smoother but laggier", float_box(0.05, 5, 0.05)),
             ("cursor", "beta", "speed boost", "one euro beta, higher follows fast moves better", float_box(0, 0.2, 0.005, 3)),
-            ("cursor", "joystick_deadzone", "stick deadzone", "joystick: share of the stick radius around the center that does nothing", float_box(0, 0.5, 0.01)),
-            ("cursor", "joystick_speed", "stick speed", "joystick: cursor speed in screen px per second at full push", float_box(100, 6000, 100, 0)),
-            ("cursor", "joystick_curve", "stick curve", "joystick: 1 = linear, higher = slower and finer near the center", float_box(1, 4, 0.1)),
+            "JOYSTICK",
+            ("cursor", "joystick_deadzone", "deadzone", "share of the stick radius around the center that does nothing", float_box(0, 0.5, 0.01)),
+            ("cursor", "joystick_speed", "speed", "cursor speed in screen px per second at full push", float_box(100, 6000, 100, 0)),
+            ("cursor", "joystick_curve", "curve", "1 = linear, higher = slower and finer near the center", float_box(1, 4, 0.1)),
         ]),
         ("gestures", "", [
             ("recognition", "max_distance", "max distance", "farther than this from every sample counts as unknown", float_box(0.5, 5, 0.1)),
@@ -104,7 +114,12 @@ class SettingsDialog(QDialog):
         for title, note, rows in pages(gesture_names):
             page = QWidget()
             form = QFormLayout(page)
-            for section, name, label, tip, widget in rows:
+            for row in rows:
+                if isinstance(row, str):
+                    form.addRow(group_title(row, first = form.rowCount() == 0))
+                    continue
+
+                section, name, label, tip, widget = row
                 set_value(widget, getattr(getattr(cfg, section), name))
                 widget.setToolTip(tip)
                 form.addRow(label, widget)
