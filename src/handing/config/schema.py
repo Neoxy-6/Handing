@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-MODES = ("mouse", "lock", "scroll", "trigger", "action")
+MODES = ("mouse", "drag", "lock", "scroll", "trigger", "action")
 MOUSE_MODES = ("relative", "absolute", "joystick")
 POINTS = ("palm", "index")
 CONTROL_HANDS = ("any", "left", "right")

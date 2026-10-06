@@ -20,6 +20,7 @@ NONE_HINTS = {
 }
 HINTS = {
     "mouse": "hand movement moves the cursor\nsensitivity and deadzone are global, in config.yaml",
+    "drag": "moves the cursor with the left button held\nlets go when the gesture ends",
     "lock": "locks control until the unlock gesture is held",
 }
 

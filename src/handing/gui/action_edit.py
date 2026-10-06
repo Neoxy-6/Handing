@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QComboBox
 
 from handing.output.macro import MACRO_PREFIX, Step, check_action
 
-COMMON = ["pgup", "pgdn", "ctrl+win+left", "ctrl+win+right", "alt+tab", "volume_up", "volume_down", "mute", "play_pause", "next_track", "prev_track"]
+COMMON = ["click:left", "click:right", "double_click:left", "click:middle", "pgup", "pgdn", "ctrl+win+left", "ctrl+win+right", "alt+tab", "volume_up", "volume_down", "mute", "play_pause", "next_track", "prev_track"]
 
 class ActionEdit(QComboBox):
     """editable combo for a key combo or macro:name, red border when invalid"""

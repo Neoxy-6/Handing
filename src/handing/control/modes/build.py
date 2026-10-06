@@ -1,6 +1,7 @@
 from handing.config.schema import DIRECTIONS, Config
 from handing.control.modes.action import ActionMode
 from handing.control.modes.base import Mode
+from handing.control.modes.drag import DragMode
 from handing.control.modes.mouse import MouseMode
 from handing.control.modes.scroll import ScrollMode
 from handing.control.modes.trigger import TriggerMode
@@ -16,9 +17,10 @@ def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: i
         return OneEuro(cfg.cursor.min_cutoff, cfg.cursor.beta)
 
     for name, g in cfg.gestures.items():
-        if g.mode == "mouse":
+        if g.mode in ("mouse", "drag"):
             gain = cfg.mouse.sensitivity * screen_width / cfg.camera.width
-            modes[name] = MouseMode(mouse, gain, cfg.mouse.deadzone, smoother())
+            kind = DragMode if g.mode == "drag" else MouseMode
+            modes[name] = kind(mouse, gain, cfg.mouse.deadzone, smoother())
         elif g.mode == "scroll":
             modes[name] = ScrollMode(mouse, g.sensitivity, smoother())
         elif g.mode == "trigger":
