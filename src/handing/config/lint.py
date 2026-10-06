@@ -9,11 +9,8 @@ def lint(cfg: Config, gesture_names: list[str]) -> list[str]:
     if len(mouse) > 1:
         out.append(f"{', '.join(mouse)} all move the mouse, they will fight over the cursor")
 
-    if not any(g.mode == "lock" for g in cfg.gestures.values()):
-        out.append("no gesture is set to lock, only the stop hotkey can stop control")
-
-    if cfg.safety.unlock_gesture not in gesture_names:
-        out.append(f"unlock gesture '{cfg.safety.unlock_gesture}' has no samples, control can never be unlocked")
+    if cfg.safety.lock:
+        out.extend(_lock_warnings(cfg, gesture_names))
 
     control = cfg.detection.control_hand
     if control != "any":
@@ -22,9 +19,22 @@ def lint(cfg: Config, gesture_names: list[str]) -> list[str]:
         if unused:
             out.append(f"control hand is {control}, so {', '.join(unused)} never run")
 
-    unlock = [key for key, g in cfg.gestures.items() if split_key(key)[0] == cfg.safety.unlock_gesture and g.mode == "lock"]
-    if unlock:
-        out.append(f"{', '.join(unlock)} locks, that hand cannot unlock with '{cfg.safety.unlock_gesture}'")
+    return out
+
+def _lock_warnings(cfg: Config, gesture_names: list[str]) -> list[str]:
+    """only matter while safety.lock is on"""
+    out = []
+    unlock = cfg.safety.unlock_gesture
+
+    if not any(g.mode == "lock" for g in cfg.gestures.values()):
+        out.append("no gesture is set to lock, only the stop hotkey can stop control")
+
+    if unlock not in gesture_names:
+        out.append(f"unlock gesture '{unlock}' has no samples, control can never be unlocked")
+
+    locking = [key for key, g in cfg.gestures.items() if split_key(key)[0] == unlock and g.mode == "lock"]
+    if locking:
+        out.append(f"{', '.join(locking)} locks, that hand cannot unlock with '{unlock}'")
 
     return out
 

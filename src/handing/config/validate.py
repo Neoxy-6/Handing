@@ -39,7 +39,7 @@ def validate(config: Config) -> None:
             raise ValueError(f"macros.{name}: {e}") from None
 
     unlock = config.gestures.get(config.safety.unlock_gesture)
-    if unlock and unlock.mode == "lock":
+    if config.safety.lock and unlock and unlock.mode == "lock":
         raise ValueError(f"safety.unlock_gesture '{config.safety.unlock_gesture}' is set to lock mode, it could never unlock")
 
     for name, g in config.gestures.items():

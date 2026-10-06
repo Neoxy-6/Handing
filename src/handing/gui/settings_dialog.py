@@ -78,6 +78,7 @@ def pages(gesture_names: list[str]) -> list:
             ("keyboard", "repeat_ms", "repeat ms", "interval of repeated actions while a gesture is held", int_box(50, 3000)),
         ]),
         ("safety", "stop key applies after restart", [
+            ("safety", "lock", "lock", "start locked, hold the unlock gesture to begin, lock again when the hand leaves", QCheckBox()),
             ("safety", "unlock_gesture", "unlock", "hold this gesture to unlock control", choice(*gesture_names)),
             ("safety", "unlock_frames", "unlock frames", "frames the unlock gesture must hold", int_box(1, 90)),
             ("safety", "estop_hotkey", "stop key", "turns output on / off from anywhere, like <ctrl>+<alt>+q", QLineEdit()),
@@ -122,6 +123,11 @@ class SettingsDialog(QDialog):
         self._control = widgets["detection", "control_hand"]
         self._control.currentTextChanged.connect(self._sync_hands)
         self._sync_hands(self._control.currentText())
+
+        lock = widgets["safety", "lock"]
+        unlock_rows = [widgets["safety", "unlock_gesture"], widgets["safety", "unlock_frames"]]
+        lock.toggled.connect(lambda on: [w.setEnabled(on) for w in unlock_rows])
+        lock.toggled.emit(lock.isChecked())
 
     def _sync_hands(self, control: str) -> None:
         """a chosen control hand needs both hands detected, or the other one may hide it"""

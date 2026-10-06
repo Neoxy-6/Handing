@@ -60,6 +60,8 @@ class GestureSettings(QDialog):
         self.none_hint = QLabel(NONE_HINTS["any"])
         self.mode = QComboBox()
         self.mode.addItems([NONE, *MODES])
+        if not cfg.safety.lock:
+            self.mode.model().item(1 + MODES.index("lock")).setEnabled(False)  # locking is off in settings
         self.pages = QStackedWidget()
         self.sensitivity = spin(0.1, 10, 0.1)
         self.threshold = spin(0.05, 0.5, 0.01)
