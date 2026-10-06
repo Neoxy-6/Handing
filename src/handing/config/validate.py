@@ -1,5 +1,6 @@
 from pynput.keyboard import HotKey
 
+from handing.config.keys import SIDES, split_key
 from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, MOUSE_MODES, POINTS, Config
 from handing.output.macro import check_action, parse_macro
 
@@ -43,6 +44,9 @@ def validate(config: Config) -> None:
 
     for name, g in config.gestures.items():
         where = f"gestures.{name}"
+        if "@" in name and split_key(name)[1] not in SIDES:
+            raise ValueError(f"{where}: the part after @ must be left or right")
+
         _one_of(g.mode, MODES, f"{where}.mode")
 
         if g.mode == "action" and not g.action:
