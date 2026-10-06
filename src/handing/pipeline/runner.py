@@ -53,7 +53,8 @@ class Runner:
     def rebuild_control(self) -> None:
         """apply changed gesture -> mode settings, also locks again"""
         self._switch(None, None, 0)
-        self.fsm = StateMachine({n: g.mode for n, g in self.cfg.gestures.items()}, self.cfg.safety.unlock_gesture, self.cfg.safety.unlock_frames)
+        safety = self.cfg.safety
+        self.fsm = StateMachine({n: g.mode for n, g in self.cfg.gestures.items()}, safety.unlock_gesture, safety.unlock_frames, use_lock = safety.lock)
         self.modes = build_modes(self.cfg, self._mouse, self.actions, virtual_screen().width)
 
     def step(self) -> Tick | None:

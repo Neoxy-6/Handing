@@ -4,16 +4,17 @@ from handing.control.states import State, Status
 LOCK_MODE = "lock"
 
 class StateMachine:
-    def __init__(self, modes: dict[str, str], unlock_gesture: str, unlock_frames: int = 15, relock_ms: int = 5000):
+    def __init__(self, modes: dict[str, str], unlock_gesture: str, unlock_frames: int = 15, relock_ms: int = 5000, use_lock: bool = True):
         """modes: config key (gesture or gesture@hand) -> mode name"""
         self.modes = modes
         self.unlock_gesture = unlock_gesture
         self.unlock_frames = unlock_frames
         self.relock_ms = relock_ms
+        self.use_lock = use_lock  # False: never locked, lock gestures do nothing
 
         self.state = State.STANDBY
         self.gesture: str | None = None
-        self._locked = True  # state to resume after standby
+        self._locked = use_lock  # state to resume after standby
         self._standby_since = 0
         self._unlock_streak = 0
         self._ignore: str | None = None  # gesture name held while unlocking, ignored on both hands until it changes
@@ -38,7 +39,7 @@ class StateMachine:
             self._set(State.STANDBY)
 
     def _resume(self, timestamp_ms: int) -> None:
-        if self._locked or timestamp_ms - self._standby_since > self.relock_ms:
+        if self.use_lock and (self._locked or timestamp_ms - self._standby_since > self.relock_ms):
             self._lock()
         else:
             self._set(State.IDLE)
@@ -47,7 +48,10 @@ class StateMachine:
         mode = self.modes.get(gesture)
 
         if mode == LOCK_MODE:
-            self._lock()
+            if self.use_lock:
+                self._lock()
+            else:
+                self._set(State.IDLE)
             return
 
         name = split_key(gesture)[0]
