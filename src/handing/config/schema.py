@@ -50,6 +50,10 @@ class KeyboardConfig:
     repeat_ms: int = 300
 
 @dataclass
+class UiConfig:
+    overlay: bool = True  # status pill while the main window is hidden
+
+@dataclass
 class GestureConfig:
     mode: str
     sensitivity: float = 1.0  # scroll
@@ -79,5 +83,6 @@ class Config:
     safety: SafetyConfig = field(default_factory = SafetyConfig)
     mouse: MouseConfig = field(default_factory = MouseConfig)
     keyboard: KeyboardConfig = field(default_factory = KeyboardConfig)
+    ui: UiConfig = field(default_factory = UiConfig)
     macros: dict[str, list] = field(default_factory = dict)  # raw steps, see output/macro.py
     gestures: dict[str, GestureConfig] = field(default_factory = default_gestures)

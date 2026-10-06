@@ -1,3 +1,5 @@
+from pynput.keyboard import HotKey
+
 from handing.config.schema import DIRECTIONS, MODES, MOUSE_MODES, POINTS, Config
 from handing.output.macro import check_action, parse_macro
 
@@ -21,6 +23,11 @@ def validate(config: Config) -> None:
     _positive(config.stability.exit_frames, "stability.exit_frames")
     _positive(config.safety.unlock_frames, "safety.unlock_frames")
     _positive(config.keyboard.repeat_ms, "keyboard.repeat_ms")
+
+    try:
+        HotKey.parse(config.safety.estop_hotkey)
+    except ValueError as e:
+        raise ValueError(f"safety.estop_hotkey: bad key '{e}', write it like <ctrl>+<alt>+q") from None
 
     macros = {}
     for name, steps in config.macros.items():
