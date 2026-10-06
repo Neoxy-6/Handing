@@ -2,6 +2,7 @@ import queue
 
 from PySide6.QtCore import QThread, Signal
 
+from handing.config.schema import GestureConfig
 from handing.features.normalize import normalize
 from handing.output.estop import EmergencyStop
 from handing.output.keyboard import Keyboard
@@ -45,6 +46,9 @@ class Worker(QThread):
 
     def rename(self, old: str, new: str) -> None:
         self._jobs.put(lambda runner: self._edit(runner, self.editor.rename, old, new))
+
+    def configure(self, name: str, gesture: GestureConfig | None) -> None:
+        self._jobs.put(lambda runner: self._edit(runner, self.editor.set_gesture, name, gesture))
 
     def run(self) -> None:
         keyboard, mouse = Keyboard(self.estop), Mouse(self.estop)

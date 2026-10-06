@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from handing.config import loader
-from handing.config.schema import Config
+from handing.config.schema import Config, GestureConfig
 from handing.recognition.classifier import UNKNOWN
 from handing.recognition.samples import SampleSet
 
@@ -46,6 +46,15 @@ class GestureEditor:
             self.cfg.safety.unlock_gesture = new
 
         self._save()
+
+    def set_gesture(self, name: str, gesture: GestureConfig | None) -> None:
+        """None removes the mapping, the gesture is still recognized but does nothing"""
+        if gesture is None:
+            self.cfg.gestures.pop(name, None)
+        else:
+            self.cfg.gestures[name] = gesture
+
+        loader.save(self.cfg)
 
     def _save(self) -> None:
         self.samples.save(self.samples_path)
