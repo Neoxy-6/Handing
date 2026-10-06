@@ -26,6 +26,10 @@ class EmergencyStop:
         if self._on_change:
             self._on_change(self.stopped)
 
+    def set_stopped(self, stopped: bool) -> None:
+        if stopped != self.stopped:
+            self.toggle()
+
     def start(self) -> None:
         self._listener.start()
 
