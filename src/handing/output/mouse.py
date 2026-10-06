@@ -11,6 +11,7 @@ class Mouse:
         self._ctl = Controller()
         self._estop = estop
         self._rest = [0.0, 0.0]  # sub-pixel remainder of relative moves
+        self._held: set[str] = set()
 
     @property
     def blocked(self) -> bool:
@@ -22,6 +23,7 @@ class Mouse:
 
     def move_by(self, dx: float, dy: float) -> None:
         if self.blocked:
+            self.release_all()  # a drag stops as soon as the stop key is hit
             return
 
         x, y = self._rest[0] + dx, self._rest[1] + dy
@@ -42,10 +44,16 @@ class Mouse:
     def press(self, button: str = "left") -> None:
         if not self.blocked:
             self._ctl.press(BUTTONS[button])
+            self._held.add(button)
 
     def release(self, button: str = "left") -> None:
         """always allowed, so a drag never gets stuck when stop is pressed"""
         self._ctl.release(BUTTONS[button])
+        self._held.discard(button)
+
+    def release_all(self) -> None:
+        for button in list(self._held):
+            self.release(button)
 
     def scroll(self, dx: int, dy: int) -> None:
         if not self.blocked:

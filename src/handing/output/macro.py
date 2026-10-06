@@ -7,6 +7,7 @@ from handing.output.keyboard import Keyboard
 from handing.output.mouse import BUTTONS, Mouse
 
 MACRO_PREFIX = "macro:"
+CLICKS = {"click": 1, "double_click": 2}  # click:left, double_click:left
 
 KEY_STEPS = ("tap", "hold", "release")
 BUTTON_STEPS = ("click", "double_click", "mouse_down", "mouse_up")
@@ -51,12 +52,23 @@ def parse_step(raw: dict) -> Step:
 def parse_macro(raw: list) -> list[Step]:
     return [parse_step(step) for step in raw]
 
+def parse_click(action: str) -> tuple[str, int] | None:
+    """'double_click:left' -> ('left', 2), None when it is not a click"""
+    kind, sep, button = action.partition(":")
+    if not sep or kind not in CLICKS:
+        return None
+
+    if button not in BUTTONS:
+        raise ValueError(f"unknown mouse button '{button}' in '{action}'")
+
+    return button, CLICKS[kind]
+
 def check_action(action: str, macros: dict[str, list[Step]]) -> None:
     """raise ValueError if the action cannot run"""
     if action.startswith(MACRO_PREFIX):
         if action[len(MACRO_PREFIX):] not in macros:
             raise ValueError(f"unknown macro in '{action}'")
-    else:
+    elif parse_click(action) is None:
         keyboard.parse(action)
 
 class ActionRunner:
@@ -72,6 +84,11 @@ class ActionRunner:
 
     def run(self, action: str) -> bool:
         """return False if skipped because another macro is still running"""
+        click = parse_click(action)
+        if click:
+            self._mouse.click(*click)
+            return True
+
         if not action.startswith(MACRO_PREFIX):
             self._kb.tap(action)
             return True
