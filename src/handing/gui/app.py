@@ -36,6 +36,7 @@ def main() -> int:
     window = MainWindow(worker)
     tray = Tray(window, worker)
     tray.show()
+    window.quit_requested.connect(tray.quit)
     overlay = Overlay(worker)
     window.visibility_changed.connect(lambda visible: overlay.set_enabled(not visible and cfg.ui.overlay))
     window.show()

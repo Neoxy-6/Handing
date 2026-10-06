@@ -1,6 +1,6 @@
 import time
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QEvent, QTimer, Signal
 from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from handing.gui.frame_view import FrameView
@@ -15,6 +15,7 @@ def pretty_hotkey(hotkey: str) -> str:
 
 class MainWindow(QMainWindow):
     visibility_changed = Signal(bool)
+    quit_requested = Signal()
 
     def __init__(self, worker: Worker):
         super().__init__()
@@ -102,11 +103,18 @@ class MainWindow(QMainWindow):
             self.visibility_changed.emit(False)
         super().hideEvent(event)
 
+    def changeEvent(self, event) -> None:
+        """minimize hides to the tray"""
+        if event.type() == QEvent.Type.WindowStateChange and self.isMinimized():
+            QTimer.singleShot(0, self.hide)
+
+        super().changeEvent(event)
+
     def closeEvent(self, event) -> None:
-        """hide to tray, quit from the tray menu"""
+        """x quits the whole app, the tray does the cleanup"""
         if self.quitting:
             super().closeEvent(event)
             return
 
         event.ignore()
-        self.hide()
+        self.quit_requested.emit()
