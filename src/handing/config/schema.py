@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 
-MODES = ("mouse", "joystick", "drag", "lock", "scroll", "trigger", "action")
+MODES = ("mouse", "drag", "scroll", "lock", "trigger", "action")
+STYLED = ("mouse", "drag", "scroll")  # modes that take a relative or joystick style
+STYLES = ("relative", "joystick")
 MOUSE_MODES = ("relative", "absolute", "joystick")
 POINTS = ("palm", "index")
 CONTROL_HANDS = ("any", "left", "right")
@@ -37,6 +39,7 @@ class CursorConfig:
     beta: float = 0.02
     joystick_deadzone: float = 0.1  # share of the stick radius that does nothing
     joystick_speed: float = 1500.0  # screen px per second at full push
+    joystick_scroll_speed: float = 15.0  # wheel notches per second at full push, times the gesture sensitivity
     joystick_curve: float = 2.0  # 1 = linear, higher = finer near the center
     joystick_center_x: float = 0.5  # as seen in the preview, 0 = left edge
     joystick_center_y: float = 0.5  # 0 = top edge
@@ -66,6 +69,7 @@ class UiConfig:
 @dataclass
 class GestureConfig:
     mode: str
+    style: str = "relative"  # mouse / drag / scroll: relative or joystick
     sensitivity: float = 1.0  # scroll
     threshold: float = 0.15  # trigger, fraction of frame width
     left: str | None = None

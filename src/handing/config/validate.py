@@ -1,7 +1,7 @@
 from pynput.keyboard import HotKey
 
 from handing.config.keys import SIDES, split_key
-from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, MOUSE_MODES, POINTS, Config
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, MOUSE_MODES, POINTS, STYLES, Config
 from handing.output.macro import check_action, parse_macro
 
 def _one_of(value, options, where: str) -> None:
@@ -28,6 +28,7 @@ def validate(config: Config) -> None:
     _positive(config.cursor.joystick_speed, "cursor.joystick_speed")
     _positive(config.cursor.joystick_curve, "cursor.joystick_curve")
     _positive(config.cursor.joystick_radius, "cursor.joystick_radius")
+    _positive(config.cursor.joystick_scroll_speed, "cursor.joystick_scroll_speed")
     for axis in ("x", "y"):
         value = getattr(config.cursor, f"joystick_center_{axis}")
         if not 0 <= value <= 1:
@@ -57,6 +58,7 @@ def validate(config: Config) -> None:
             raise ValueError(f"{where}: the part after @ must be left or right")
 
         _one_of(g.mode, MODES, f"{where}.mode")
+        _one_of(g.style, STYLES, f"{where}.style")
 
         if g.mode == "action" and not g.action:
             raise ValueError(f"{where}.action is required for action mode")

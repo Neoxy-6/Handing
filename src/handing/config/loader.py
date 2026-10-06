@@ -10,6 +10,8 @@ from handing.core import paths
 def _section(cls, raw: dict | None, where: str):
     """build a dataclass from a dict, missing keys keep defaults, unknown keys are errors"""
     raw = raw or {}
+    if cls is GestureConfig and raw.get("mode") == "joystick":
+        raw = {**raw, "mode": "mouse", "style": "joystick"}  # joystick used to be its own mode
     known = {f.name for f in fields(cls)}
     unknown = set(raw) - known
 
