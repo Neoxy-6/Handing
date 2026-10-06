@@ -55,6 +55,9 @@ class MainWindow(QMainWindow):
         self.on_output_changed(False)
 
     def on_tick(self, tick) -> None:
+        if not self.isVisible():
+            return
+
         self.view.show_frame(draw_hands(tick.frame.copy(), tick.hands))
 
         self.state.setText(tick.status.state.value)
@@ -78,5 +81,6 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(self, "Handing", message)
 
     def closeEvent(self, event) -> None:
-        self.worker.stop()
-        super().closeEvent(event)
+        """hide to tray, quit from the tray menu"""
+        event.ignore()
+        self.hide()
