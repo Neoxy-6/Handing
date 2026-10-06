@@ -15,6 +15,7 @@ from handing.features import anchor
 from handing.filtering.hysteresis import Hysteresis
 from handing.input import preprocess
 from handing.input.camera import Camera
+from handing.input.throttle import Throttle
 from handing.output.macro import ActionRunner, parse_macro
 from handing.output.screen import virtual_screen
 from handing.recognition.classifier import Classifier, Prediction
@@ -33,6 +34,7 @@ class Runner:
     def __init__(self, cfg: Config, keyboard, mouse, samples: SampleSet):
         self.cfg = cfg
         self.camera = Camera(cfg.camera.index)
+        self.throttle = Throttle(cfg.camera.idle_fps)
         self.landmarker = Landmarker(paths.model_path(), cfg.detection.hands, cfg.detection.min_confidence, cfg.camera.mirrored)
 
         self.classifier = Classifier(samples, cfg.recognition.k, cfg.recognition.max_distance)
@@ -53,6 +55,7 @@ class Runner:
 
     def step(self) -> Tick | None:
         """None when the camera gave no frame"""
+        self.throttle.wait()
         frame = self.camera.read()
         if frame is None:
             return None
@@ -66,6 +69,7 @@ class Runner:
             self._switch(None, None, t)
             return Tick(frame, hands, None, self.fsm.update(None, t))
 
+        self.throttle.saw_hand()
         hand = hands.hands[0]
         pred = self.classifier.predict(hand, hands.width, hands.height)
         status = self.fsm.update(self.hyst.update(pred.name, pred.confidence), t)

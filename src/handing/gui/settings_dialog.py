@@ -55,6 +55,7 @@ def pages(gesture_names: list[str]) -> list:
         ("camera", "changes reopen the camera", [
             ("camera", "index", "camera index", int_box(0, 9)),
             ("camera", "mirrored", "frame is mirrored", QCheckBox()),
+            ("camera", "idle_fps", "fps with no hand (0 = off)", int_box(0, 30)),
             ("detection", "hands", "hands", choice(1, 2)),
             ("detection", "min_confidence", "detection confidence", float_box(0.1, 0.95, 0.05)),
         ]),

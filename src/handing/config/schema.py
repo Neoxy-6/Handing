@@ -9,6 +9,7 @@ DIRECTIONS = ("left", "right", "up", "down")
 class CameraConfig:
     index: int = 0
     width: int = 640
+    idle_fps: int = 8  # frames per second while no hand is seen, 0 = never slow down
     mirrored: bool = False  # frame flipped like a mirror, by the driver or by Camera (I will test this after 
 
 @dataclass
