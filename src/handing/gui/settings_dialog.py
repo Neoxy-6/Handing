@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QMessageBox, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import POINTS, Config
+from handing.config.schema import CONTROL_HANDS, POINTS, Config
 from handing.config.validate import validate
 
 def int_box(low: int, high: int) -> QSpinBox:
@@ -57,6 +57,7 @@ def pages(gesture_names: list[str]) -> list:
             ("camera", "mirrored", "frame is mirrored", QCheckBox()),
             ("camera", "idle_fps", "fps with no hand (0 = off)", int_box(0, 30)),
             ("detection", "hands", "hands", choice(1, 2)),
+            ("detection", "control_hand", "control hand", choice(*CONTROL_HANDS)),
             ("detection", "min_confidence", "detection confidence", float_box(0.1, 0.95, 0.05)),
         ]),
         ("cursor", "", [

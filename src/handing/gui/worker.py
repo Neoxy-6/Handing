@@ -94,11 +94,10 @@ class Worker(QThread):
         self._record_name, self._record_count, self._poses = name, count, []
 
     def _collect(self, runner: Runner, tick: Tick) -> None:
-        if self._record_name is None or tick.hands.empty:
+        if self._record_name is None or tick.hand is None:
             return
 
-        hands = tick.hands
-        self._poses.append(normalize(hands.hands[0], hands.width, hands.height))
+        self._poses.append(normalize(tick.hand, tick.hands.width, tick.hands.height))
         self.record_progress.emit(len(self._poses))
 
         if len(self._poses) >= self._record_count:

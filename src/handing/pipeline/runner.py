@@ -25,7 +25,8 @@ from handing.recognition.samples import SampleSet
 class Tick:
     frame: np.ndarray  # bgr, resized to camera.width
     hands: HandFrame
-    prediction: Prediction | None  # first hand, before filtering
+    hand: Hand | None  # the hand in control, others are only drawn
+    prediction: Prediction | None  # of that hand, before filtering
     status: Status
 
 class Runner:
@@ -35,7 +36,8 @@ class Runner:
         self.cfg = cfg
         self.camera = Camera(cfg.camera.index)
         self.throttle = Throttle(cfg.camera.idle_fps)
-        self.landmarker = Landmarker(paths.model_path(), cfg.detection.hands, cfg.detection.min_confidence, cfg.camera.mirrored)
+        num_hands = cfg.detection.hands if cfg.detection.control_hand == "any" else 2
+        self.landmarker = Landmarker(paths.model_path(), num_hands, cfg.detection.min_confidence, cfg.camera.mirrored)
 
         self.classifier = Classifier(samples, cfg.recognition.k, cfg.recognition.max_distance)
         self.hyst = Hysteresis(cfg.stability.enter_frames, cfg.stability.exit_frames, cfg.stability.min_confidence)
@@ -64,13 +66,13 @@ class Runner:
         frame = preprocess.fit_width(frame, self.cfg.camera.width)
         hands = self.landmarker.detect(preprocess.to_rgb(frame), t)
 
-        if hands.empty:
+        hand = self.pick(hands)
+        if hand is None:
             self.hyst.reset()
             self._switch(None, None, t)
-            return Tick(frame, hands, None, self.fsm.update(None, t))
+            return Tick(frame, hands, None, None, self.fsm.update(None, t))
 
         self.throttle.saw_hand()
-        hand = hands.hands[0]
         pred = self.classifier.predict(hand, hands.width, hands.height)
         status = self.fsm.update(self.hyst.update(pred.name, pred.confidence), t)
 
@@ -82,7 +84,13 @@ class Runner:
         else:
             self._switch(mode, point, t)
 
-        return Tick(frame, hands, pred, status)
+        return Tick(frame, hands, hand, pred, status)
+
+    def pick(self, hands: HandFrame) -> Hand | None:
+        """first hand matching detection.control_hand"""
+        wanted = self.cfg.detection.control_hand
+
+        return next((h for h in hands.hands if wanted == "any" or h.handedness.lower() == wanted), None)
 
     def _point(self, hand: Hand, hands: HandFrame) -> np.ndarray:
         """camera px, x toward the user's right"""
