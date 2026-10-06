@@ -1,12 +1,12 @@
-import time
-
 from PySide6.QtCore import QEvent, QTimer, Signal
-from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
 from handing.gui.render import draw_hands
 from handing.gui.settings_dialog import SettingsDialog
+from handing.gui.status_card import StatusCard
+from handing.gui.style import set_role
 from handing.gui.worker import Worker
 
 def pretty_hotkey(hotkey: str) -> str:
@@ -25,33 +25,38 @@ class MainWindow(QMainWindow):
         self.worker = worker
         self.quitting = False  # set before QApplication.quit so close really closes
         self.view = FrameView()
-        self.state = QLabel("-")
-        self.gesture = QLabel("-")
-        self.raw = QLabel("-")
-        self.fps = QLabel("-")
+        self.status = StatusCard()
         self.output = QPushButton()
         self.output.setCheckable(True)
-        self._last_tick = time.perf_counter()
+        self.output.setMinimumHeight(36)
 
-        info = QFormLayout()
-        info.addRow("state", self.state)
-        info.addRow("gesture", self.gesture)
-        info.addRow("raw", self.raw)
-        info.addRow("fps", self.fps)
+        settings = QPushButton("app settings")
+        settings.setMinimumHeight(36)
+        settings.clicked.connect(self.open_settings)
+        hint = QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} turns output on / off anywhere")
+        hint.setProperty("role", "muted")
+        hint.setWordWrap(True)
+
+        bottom = QHBoxLayout()
+        bottom.addWidget(settings, 1)
+        bottom.addWidget(self.output, 1)
 
         side = QVBoxLayout()
-        side.addLayout(info)
-        side.addWidget(QLabel("gestures"))
-        side.addWidget(GesturePanel(worker))
-        settings = QPushButton("app settings")
-        settings.clicked.connect(self.open_settings)
-        side.addWidget(settings)
-        side.addWidget(QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} toggles output"))
-        side.addWidget(self.output)
+        side.setSpacing(10)
+        side.addWidget(self.status)
+        side.addWidget(GesturePanel(worker), 1)
+        side.addWidget(hint)
+        side.addLayout(bottom)
+
+        panel = QWidget()
+        panel.setFixedWidth(300)
+        panel.setLayout(side)
 
         root = QHBoxLayout()
-        root.addWidget(self.view, 3)
-        root.addLayout(side, 1)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(12)
+        root.addWidget(self.view, 1)
+        root.addWidget(panel)
 
         central = QWidget()
         central.setLayout(root)
@@ -68,15 +73,7 @@ class MainWindow(QMainWindow):
             return
 
         self.view.show_frame(draw_hands(tick.frame.copy(), tick.hands))
-
-        self.state.setText(tick.status.state.value)
-        self.gesture.setText(tick.status.gesture or "-")
-        pred = tick.prediction
-        self.raw.setText(f"{pred.name}  {pred.confidence:.2f}  d {pred.distance:.2f}" if pred else "no hand")
-
-        now = time.perf_counter()
-        self.fps.setText(f"{1 / max(now - self._last_tick, 1e-6):.0f}")
-        self._last_tick = now
+        self.status.update_tick(tick)
 
     def on_output_changed(self, live: bool) -> None:
         self.output.blockSignals(True)
@@ -84,7 +81,7 @@ class MainWindow(QMainWindow):
         self.output.blockSignals(False)
 
         self.output.setText("output ON" if live else "output OFF")
-        self.output.setStyleSheet("background: #c33; color: white;" if live else "")
+        set_role(self.output, "danger" if live else "")
 
     def open_settings(self) -> None:
         dialog = SettingsDialog(self.worker.cfg, self.worker.editor.samples.names, self)

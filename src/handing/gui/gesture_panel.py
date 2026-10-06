@@ -1,35 +1,53 @@
-from PySide6.QtWidgets import QGridLayout, QInputDialog, QListWidget, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
 from handing.gui.gesture_settings import GestureSettings
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import check_name
 
-class GesturePanel(QWidget):
+class GesturePanel(QFrame):
     def __init__(self, worker: Worker):
         super().__init__()
         self.worker = worker
         self.names: list[str] = []
 
-        self.list = QListWidget()
+        self.setObjectName("card")
+
+        self.list = QTreeWidget()
+        self.list.setHeaderLabels(["gesture", "mode", "samples"])
+        self.list.headerItem().setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.list.setRootIsDecorated(False)
+        self.list.setUniformRowHeights(True)
+        header = self.list.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
         buttons = QGridLayout()
-        for text, slot, row, col, span in [
-            ("edit gesture", self.settings, 0, 0, 2),
-            ("add", self.add, 1, 0, 1),
-            ("record more", self.record_more, 1, 1, 1),
-            ("rename", self.rename, 2, 0, 1),
-            ("delete", self.delete, 2, 1, 1),
+        buttons.setSpacing(6)
+        for text, slot, row, col, span, role in [
+            ("edit gesture", self.settings, 0, 0, 2, "primary"),
+            ("add", self.add, 1, 0, 1, ""),
+            ("record more", self.record_more, 1, 1, 1, ""),
+            ("rename", self.rename, 2, 0, 1, ""),
+            ("delete", self.delete, 2, 1, 1, ""),
         ]:
             button = QPushButton(text)
+            button.setProperty("role", role)
             button.clicked.connect(slot)
             buttons.addWidget(button, row, col, 1, span)
 
+        title = QLabel("GESTURES")
+        title.setProperty("role", "title")
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.addWidget(title)
         layout.addWidget(self.list)
         layout.addLayout(buttons)
 
-        self.list.itemDoubleClicked.connect(self.settings)
+        self.list.itemDoubleClicked.connect(lambda *_: self.settings())
         worker.samples_changed.connect(self.show_counts)
 
     def show_counts(self, counts: dict[str, int]) -> None:
@@ -39,10 +57,13 @@ class GesturePanel(QWidget):
 
         for name, n in counts.items():
             mode = gestures[name].mode if name in gestures else "-"
-            self.list.addItem(f"{name}  [{mode}]  ({n} samples)")
+            item = QTreeWidgetItem([name, mode, str(n)])
+            item.setTextAlignment(2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            self.list.addTopLevelItem(item)
 
     def selected(self) -> str | None:
-        row = self.list.currentRow()
+        item = self.list.currentItem()
+        row = self.list.indexOfTopLevelItem(item) if item else -1
         return self.names[row] if 0 <= row < len(self.names) else None
 
     def ask_name(self, title: str, text: str = "") -> str | None:

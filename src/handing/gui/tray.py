@@ -3,15 +3,11 @@ from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from handing.control.states import State
+from handing.gui.style import DANGER, STATE_COLORS
 from handing.gui.worker import Worker
 
-COLORS = {
-    State.STANDBY: "#777777",
-    State.LOCKED: "#777777",
-    State.IDLE: "#3b82f6",
-    State.ACTIVE: "#22c55e",
-}
-LIVE_DOT = "#ef4444"
+COLORS = STATE_COLORS
+LIVE_DOT = DANGER
 
 def make_icon(state: State, live: bool) -> QIcon:
     """state colored circle, red dot in the corner while output is live"""

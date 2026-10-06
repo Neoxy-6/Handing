@@ -6,6 +6,7 @@ from handing.config import loader
 from handing.core import paths
 from handing.gui.main_window import MainWindow
 from handing.gui.overlay import Overlay
+from handing.gui.style import SHEET
 from handing.gui.tray import Tray
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import GestureEditor
@@ -25,6 +26,7 @@ def load_samples() -> SampleSet:
 def main() -> int:
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    app.setStyleSheet(SHEET)
 
     try:
         cfg = loader.load()

@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetrics, QGuiApplication, QPainter
 from PySide6.QtWidgets import QWidget
 
 from handing.control.states import State
-from handing.gui.tray import COLORS
+from handing.gui.style import STATE_COLORS as COLORS
 from handing.gui.worker import Worker
 
 MARGIN = 16
