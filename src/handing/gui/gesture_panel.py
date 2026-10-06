@@ -5,18 +5,19 @@ from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QL
 
 from handing.config.keys import split_key, variants
 from handing.config.lint import new_warnings
+from handing.config.schema import STYLED
 from handing.gui.gesture_settings import GestureSettings
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import check_name
 
 def mode_summary(gestures: dict, name: str) -> str:
-    """'mouse · L trigger' for a gesture with a left hand override"""
+    """'mouse-relative · L trigger' for a gesture with a left hand override"""
     parts = []
     for key in sorted(variants(gestures, name), key = lambda k: ("any", "left", "right").index(split_key(k)[1])):
         hand = split_key(key)[1]
         g = gestures[key]
-        mode = f"{g.mode}·js" if g.style == "joystick" else g.mode
+        mode = f"{g.mode}-{g.style}" if g.mode in STYLED else g.mode
         parts.append(mode if hand == "any" else f"{hand[0].upper()} {mode}")
 
     return "  ·  ".join(parts) or "-"
