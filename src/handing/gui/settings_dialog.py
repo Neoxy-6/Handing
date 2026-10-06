@@ -81,6 +81,9 @@ def pages(gesture_names: list[str]) -> list:
             ("cursor", "joystick_deadzone", "deadzone", "share of the stick radius around the center that does nothing", float_box(0, 0.5, 0.01)),
             ("cursor", "joystick_speed", "speed", "cursor speed in screen px per second at full push", float_box(100, 6000, 100, 0)),
             ("cursor", "joystick_curve", "curve", "1 = linear, higher = slower and finer near the center", float_box(1, 4, 0.1)),
+            ("cursor", "joystick_center_x", "center x", "stick center as seen in the preview, 0 = left edge, 1 = right edge", float_box(0, 1, 0.05)),
+            ("cursor", "joystick_center_y", "center y", "stick center, 0 = top edge, 1 = bottom edge", float_box(0, 1, 0.05)),
+            ("cursor", "joystick_radius", "radius", "full push distance, share of the frame height", float_box(0.1, 1, 0.05)),
         ]),
         ("gestures", "", [
             ("recognition", "max_distance", "max distance", "farther than this from every sample counts as unknown", float_box(0.5, 5, 0.1)),

@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         if tick.status.state != State.ACTIVE or g is None or g.mode != "joystick":
             return
 
-        center, radius = stick_area(cfg.camera.width)
+        center, radius = stick_area(cfg)
         point_of = anchor.palm_center if cfg.cursor.point == "palm" else anchor.index_tip
         point = point_of(tick.hand) * (tick.hands.width, tick.hands.height) if tick.hand else None
         draw_stick(frame, center, radius, cfg.cursor.joystick_deadzone, point)

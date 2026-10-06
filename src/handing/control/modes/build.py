@@ -12,11 +12,21 @@ from handing.filtering.one_euro import OneEuro
 from handing.output.macro import ActionRunner
 from handing.output.mouse import Mouse
 
-def stick_area(width: int) -> tuple[np.ndarray, float]:
-    """center and full-push radius in camera px, frames are 4:3"""
+def stick_area(cfg: Config) -> tuple[np.ndarray, float]:
+    """center as seen in the preview and full-push radius, camera px, frames are 4:3"""
+    width = cfg.camera.width
     height = width * 3 / 4
+    c = cfg.cursor
 
-    return np.array([width / 2, height / 2]), height / 2
+    return np.array([c.joystick_center_x * width, c.joystick_center_y * height]), c.joystick_radius * height
+
+def control_center(cfg: Config, preview_center: np.ndarray) -> np.ndarray:
+    """control points have x toward the user's right, the raw preview is flipped unless mirrored"""
+    center = preview_center.copy()
+    if not cfg.camera.mirrored:
+        center[0] = cfg.camera.width - center[0]
+
+    return center
 
 def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: int) -> dict[str, Mode]:
     """gesture name -> mode object, lock gestures are handled by the state machine"""
@@ -33,7 +43,8 @@ def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: i
             kind = DragMode if g.mode == "drag" else MouseMode
             modes[name] = kind(mouse, gain, cfg.mouse.deadzone, smoother())
         elif g.mode == "joystick":
-            modes[name] = JoystickMode(mouse, *stick_area(cfg.camera.width), c.joystick_deadzone, c.joystick_speed, c.joystick_curve, smoother())
+            center, radius = stick_area(cfg)
+            modes[name] = JoystickMode(mouse, control_center(cfg, center), radius, c.joystick_deadzone, c.joystick_speed, c.joystick_curve, smoother())
         elif g.mode == "scroll":
             modes[name] = ScrollMode(mouse, g.sensitivity, smoother())
         elif g.mode == "trigger":

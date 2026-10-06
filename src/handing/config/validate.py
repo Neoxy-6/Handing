@@ -27,6 +27,11 @@ def validate(config: Config) -> None:
     _positive(config.keyboard.repeat_ms, "keyboard.repeat_ms")
     _positive(config.cursor.joystick_speed, "cursor.joystick_speed")
     _positive(config.cursor.joystick_curve, "cursor.joystick_curve")
+    _positive(config.cursor.joystick_radius, "cursor.joystick_radius")
+    for axis in ("x", "y"):
+        value = getattr(config.cursor, f"joystick_center_{axis}")
+        if not 0 <= value <= 1:
+            raise ValueError(f"cursor.joystick_center_{axis} must be in [0, 1], got {value!r}")
     if not 0 <= config.cursor.joystick_deadzone < 1:
         raise ValueError(f"cursor.joystick_deadzone must be in [0, 1), got {config.cursor.joystick_deadzone!r}")
 

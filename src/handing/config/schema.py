@@ -38,6 +38,9 @@ class CursorConfig:
     joystick_deadzone: float = 0.1  # share of the stick radius that does nothing
     joystick_speed: float = 1500.0  # screen px per second at full push
     joystick_curve: float = 2.0  # 1 = linear, higher = finer near the center
+    joystick_center_x: float = 0.5  # as seen in the preview, 0 = left edge
+    joystick_center_y: float = 0.5  # 0 = top edge
+    joystick_radius: float = 0.5  # share of the frame height for full push
 
 @dataclass
 class SafetyConfig:
