@@ -1,14 +1,22 @@
 import numpy as np
 
-from handing.control.modes.mouse import MouseMode
+from handing.control.modes.base import Mode
+from handing.output.mouse import Mouse
 
-class DragMode(MouseMode):
-    """mouse mode with the left button held, released when the gesture ends"""
+class DragMode(Mode):
+    """runs a cursor mode with the left button held, released when the gesture ends"""
+
+    def __init__(self, cursor: Mode, mouse: Mouse):
+        self.cursor = cursor
+        self.mouse = mouse
 
     def enter(self, point: np.ndarray, timestamp_ms: int) -> None:
-        super().enter(point, timestamp_ms)
+        self.cursor.enter(point, timestamp_ms)
         self.mouse.press("left")
+
+    def update(self, point: np.ndarray, timestamp_ms: int) -> None:
+        self.cursor.update(point, timestamp_ms)
 
     def exit(self) -> None:
         self.mouse.release("left")
-        super().exit()
+        self.cursor.exit()

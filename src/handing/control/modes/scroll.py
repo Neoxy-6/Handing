@@ -6,6 +6,20 @@ from handing.output.mouse import Mouse
 
 NOTCH_PX = 12  # camera px of hand movement per wheel notch at sensitivity 1
 
+class Wheel:
+    """turns joystick steps into whole wheel notches, hand above the center scrolls up"""
+
+    def __init__(self, mouse: Mouse):
+        self.mouse = mouse
+        self._rest = 0.0
+
+    def move(self, dx: float, dy: float) -> None:
+        self._rest -= dy  # image y grows downward
+        notches = int(self._rest)
+        if notches:
+            self._rest -= notches
+            self.mouse.scroll(0, notches)
+
 class ScrollMode(Mode):
     """hand up scrolls up, movement accumulates until a full notch"""
 

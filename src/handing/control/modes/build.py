@@ -6,7 +6,7 @@ from handing.control.modes.base import Mode
 from handing.control.modes.drag import DragMode
 from handing.control.modes.joystick import JoystickMode
 from handing.control.modes.mouse import MouseMode
-from handing.control.modes.scroll import ScrollMode
+from handing.control.modes.scroll import ScrollMode, Wheel
 from handing.control.modes.trigger import TriggerMode
 from handing.filtering.one_euro import OneEuro
 from handing.output.macro import ActionRunner
@@ -33,18 +33,26 @@ def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: i
     modes: dict[str, Mode] = {}
 
     c = cfg.cursor
+    center, radius = stick_area(cfg)
+    center = control_center(cfg, center)
+    gain = cfg.mouse.sensitivity * screen_width / cfg.camera.width
 
     def smoother() -> OneEuro:
-        return OneEuro(cfg.cursor.min_cutoff, cfg.cursor.beta)
+        return OneEuro(c.min_cutoff, c.beta)
+
+    def stick(move, speed: float) -> JoystickMode:
+        return JoystickMode(move, center, radius, c.joystick_deadzone, speed, c.joystick_curve, smoother())
+
+    def cursor(style: str) -> Mode:
+        return stick(mouse.move_by, c.joystick_speed) if style == "joystick" else MouseMode(mouse, gain, cfg.mouse.deadzone, smoother())
 
     for name, g in cfg.gestures.items():
-        if g.mode in ("mouse", "drag"):
-            gain = cfg.mouse.sensitivity * screen_width / cfg.camera.width
-            kind = DragMode if g.mode == "drag" else MouseMode
-            modes[name] = kind(mouse, gain, cfg.mouse.deadzone, smoother())
-        elif g.mode == "joystick":
-            center, radius = stick_area(cfg)
-            modes[name] = JoystickMode(mouse, control_center(cfg, center), radius, c.joystick_deadzone, c.joystick_speed, c.joystick_curve, smoother())
+        if g.mode == "mouse":
+            modes[name] = cursor(g.style)
+        elif g.mode == "drag":
+            modes[name] = DragMode(cursor(g.style), mouse)
+        elif g.mode == "scroll" and g.style == "joystick":
+            modes[name] = stick(Wheel(mouse).move, c.joystick_scroll_speed * g.sensitivity)
         elif g.mode == "scroll":
             modes[name] = ScrollMode(mouse, g.sensitivity, smoother())
         elif g.mode == "trigger":
