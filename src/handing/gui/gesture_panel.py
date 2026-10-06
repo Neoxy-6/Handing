@@ -15,7 +15,9 @@ def mode_summary(gestures: dict, name: str) -> str:
     parts = []
     for key in sorted(variants(gestures, name), key = lambda k: ("any", "left", "right").index(split_key(k)[1])):
         hand = split_key(key)[1]
-        parts.append(gestures[key].mode if hand == "any" else f"{hand[0].upper()} {gestures[key].mode}")
+        g = gestures[key]
+        mode = f"{g.mode}·js" if g.style == "joystick" else g.mode
+        parts.append(mode if hand == "any" else f"{hand[0].upper()} {mode}")
 
     return "  ·  ".join(parts) or "-"
 

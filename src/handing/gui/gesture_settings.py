@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 
 from handing.config.keys import make_key
 from handing.config.lint import new_warnings
-from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, Config, GestureConfig
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, STYLED, STYLES, Config, GestureConfig
 from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
 from handing.gui.confirm import confirm_warnings
@@ -19,8 +19,7 @@ NONE_HINTS = {
     "side": "no override, this hand uses the 'any' setting",
 }
 HINTS = {
-    "mouse": "hand movement moves the cursor\nsensitivity and deadzone are global, in config.yaml",
-    "joystick": "push the hand away from the frame center to move the cursor\nfarther is faster, back to the center to stop",
+    "mouse": "moves the cursor\nspeed and stick settings are in settings > cursor",
     "drag": "moves the cursor with the left button held\nlets go when the gesture ends",
     "lock": "locks control until the unlock gesture is held",
 }
@@ -60,6 +59,9 @@ class GestureSettings(QDialog):
 
         self.none_hint = QLabel(NONE_HINTS["any"])
         self.mode = QComboBox()
+        self.style = QComboBox()
+        self.style.addItems(STYLES)
+        self.style.setToolTip("relative: follows hand movement\njoystick: distance from the stick center sets the speed")
         self.mode.addItems([NONE, *MODES])
         if not cfg.safety.lock:
             self.mode.model().item(1 + MODES.index("lock")).setEnabled(False)  # locking is off in settings
@@ -88,11 +90,12 @@ class GestureSettings(QDialog):
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(form_page(("hand", self.hand), ("mode", self.mode)))
+        layout.addWidget(form_page(("hand", self.hand), ("mode", self.mode), ("style", self.style)))
         layout.addWidget(self.pages)
         layout.addWidget(buttons)
 
         self.mode.currentIndexChanged.connect(self.pages.setCurrentIndex)
+        self.mode.currentTextChanged.connect(lambda mode: self.style.setEnabled(mode in STYLED))
         self.hand.currentTextChanged.connect(self._load_hand)
         self._load_hand("any")
 
@@ -105,6 +108,8 @@ class GestureSettings(QDialog):
 
     def _load(self, g: GestureConfig) -> None:
         self.mode.setCurrentText(g.mode)
+        self.style.setCurrentText(g.style)
+        self.style.setEnabled(g.mode in STYLED)
         self.pages.setCurrentIndex(self.mode.currentIndex())
         self.sensitivity.setValue(g.sensitivity)
         self.threshold.setValue(g.threshold)
@@ -119,6 +124,8 @@ class GestureSettings(QDialog):
             return None
 
         g = GestureConfig(mode)
+        if mode in STYLED:
+            g.style = self.style.currentText()
         if mode == "scroll":
             g.sensitivity = self.sensitivity.value()
         elif mode == "trigger":

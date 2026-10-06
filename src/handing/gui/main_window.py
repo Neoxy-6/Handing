@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPu
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
 from handing.control.modes.build import stick_area
+from handing.config.schema import STYLED
 from handing.control.states import State
 from handing.features import anchor
 from handing.gui.render import draw_hands, draw_stick
@@ -84,7 +85,7 @@ class MainWindow(QMainWindow):
         """show the joystick guide while a joystick gesture runs"""
         cfg = self.worker.cfg
         g = cfg.gestures.get(tick.status.gesture or "")
-        if tick.status.state != State.ACTIVE or g is None or g.mode != "joystick":
+        if tick.status.state != State.ACTIVE or g is None or g.style != "joystick" or g.mode not in STYLED:
             return
 
         center, radius = stick_area(cfg)
