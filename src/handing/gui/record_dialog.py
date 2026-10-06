@@ -1,14 +1,15 @@
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QLabel, QMessageBox, QProgressBar, QPushButton, QVBoxLayout
 
 from handing.gui.worker import Worker
 
 COUNTDOWN = 3
+SAMPLES = 150  # same as each default gesture, keeps knn votes fair
 
 class RecordDialog(QDialog):
     """countdown, then collect samples from frames with a hand"""
 
-    def __init__(self, worker: Worker, name: str, count: int = 60, parent = None):
+    def __init__(self, worker: Worker, name: str, count: int = SAMPLES, parent = None):
         super().__init__(parent)
         self.setWindowTitle(f"record '{name}'")
         self.worker = worker
@@ -32,7 +33,7 @@ class RecordDialog(QDialog):
         layout.addWidget(cancel)
 
         worker.record_progress.connect(self.bar.setValue)
-        worker.record_done.connect(self._done)
+        worker.record_finished.connect(self._finished)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._countdown)
@@ -53,9 +54,31 @@ class RecordDialog(QDialog):
         self.message.setText("recording")
         self.worker.record(self.name, self.count)
 
-    def _done(self, name: str) -> None:
-        if name == self.name:
-            self.accept()
+    def _finished(self, name: str, poses: list, similar) -> None:
+        if name != self.name:
+            return
+
+        self._started = False
+
+        if similar and not self._keep_anyway(similar):
+            self.reject()
+            return
+
+        self.worker.add_samples(name, poses)
+        self.accept()
+
+    def _keep_anyway(self, similar) -> bool:
+        text = (
+            f"'{self.name}' looks like '{similar.name}'\n"
+            f"{similar.ratio:.0%} of the new samples match '{similar.name}' (median distance {similar.distance:.2f})\n\n"
+            "Keep anyway?"
+        )
+        box = QMessageBox(QMessageBox.Icon.Warning, "similar gesture", text, parent = self)
+        keep = box.addButton("keep", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("discard", QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+
+        return box.clickedButton() is keep
 
     def reject(self) -> None:
         if self._started:
@@ -65,5 +88,5 @@ class RecordDialog(QDialog):
 
     def done(self, result: int) -> None:
         self.worker.record_progress.disconnect(self.bar.setValue)
-        self.worker.record_done.disconnect(self._done)
+        self.worker.record_finished.disconnect(self._finished)
         super().done(result)
