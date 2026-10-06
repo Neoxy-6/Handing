@@ -37,7 +37,7 @@ def main() -> int:
     tray = Tray(window, worker)
     tray.show()
     overlay = Overlay(worker)
-    window.visibility_changed.connect(lambda visible: overlay.set_enabled(not visible))
+    window.visibility_changed.connect(lambda visible: overlay.set_enabled(not visible and cfg.ui.overlay))
     window.show()
     worker.start()
 

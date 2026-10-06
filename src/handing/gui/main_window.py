@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QMainWindow, QMe
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
 from handing.gui.render import draw_hands
+from handing.gui.settings_dialog import SettingsDialog
 from handing.gui.worker import Worker
 
 def pretty_hotkey(hotkey: str) -> str:
@@ -41,6 +42,9 @@ class MainWindow(QMainWindow):
         side.addLayout(info)
         side.addWidget(QLabel("gestures"))
         side.addWidget(GesturePanel(worker))
+        settings = QPushButton("settings")
+        settings.clicked.connect(self.open_settings)
+        side.addWidget(settings)
         side.addWidget(QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} toggles output"))
         side.addWidget(self.output)
 
@@ -80,6 +84,11 @@ class MainWindow(QMainWindow):
 
         self.output.setText("output ON" if live else "output OFF")
         self.output.setStyleSheet("background: #c33; color: white;" if live else "")
+
+    def open_settings(self) -> None:
+        dialog = SettingsDialog(self.worker.cfg, self.worker.editor.samples.names, self)
+        if dialog.exec():
+            self.worker.apply_config(dialog.result_config())
 
     def on_failed(self, message: str) -> None:
         QMessageBox.critical(self, "Handing", message)
