@@ -24,6 +24,8 @@ def validate(config: Config) -> None:
     _positive(config.stability.enter_frames, "stability.enter_frames")
     _positive(config.stability.exit_frames, "stability.exit_frames")
     _positive(config.safety.unlock_frames, "safety.unlock_frames")
+    if config.safety.lock_after < 0:
+        raise ValueError(f"safety.lock_after must be >= 0, got {config.safety.lock_after!r}")
     _positive(config.keyboard.repeat_ms, "keyboard.repeat_ms")
     _positive(config.cursor.joystick_speed, "cursor.joystick_speed")
     _positive(config.cursor.joystick_curve, "cursor.joystick_curve")

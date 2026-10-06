@@ -98,6 +98,7 @@ def pages(gesture_names: list[str]) -> list:
             ("safety", "lock", "lock", "start locked, hold the unlock gesture to begin, lock again when the hand leaves", QCheckBox()),
             ("safety", "unlock_gesture", "unlock", "hold this gesture to unlock control", choice(*gesture_names)),
             ("safety", "unlock_frames", "unlock frames", "frames the unlock gesture must hold", int_box(1, 90)),
+            ("safety", "lock_after", "lock after (s)", "seconds without a hand before locking again, 0 = right away", float_box(0, 300, 1, 1)),
             ("safety", "estop_hotkey", "stop key", "turns output on / off from anywhere, like <ctrl>+<alt>+q", QLineEdit()),
             ("ui", "overlay", "overlay", "status pill while the window is hidden", QCheckBox()),
         ]),
@@ -149,7 +150,7 @@ class SettingsDialog(QDialog):
         self._sync_hands(self._control.currentText())
 
         lock = widgets["safety", "lock"]
-        unlock_rows = [widgets["safety", "unlock_gesture"], widgets["safety", "unlock_frames"]]
+        unlock_rows = [widgets["safety", "unlock_gesture"], widgets["safety", "unlock_frames"], widgets["safety", "lock_after"]]
         lock.toggled.connect(lambda on: [self._enable(w, on) for w in unlock_rows])
         lock.toggled.emit(lock.isChecked())
 

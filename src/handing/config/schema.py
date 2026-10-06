@@ -49,6 +49,7 @@ class CursorConfig:
 class SafetyConfig:
     estop_hotkey: str = "<ctrl>+<alt>+q"
     lock: bool = True  # start locked, need the unlock gesture, lock again after the hand leaves
+    lock_after: float = 5.0  # seconds without a hand before locking again
     unlock_gesture: str = "paper"
     unlock_frames: int = 15
 
