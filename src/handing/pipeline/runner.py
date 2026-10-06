@@ -37,13 +37,19 @@ class Runner:
 
         self.classifier = Classifier(samples, cfg.recognition.k, cfg.recognition.max_distance)
         self.hyst = Hysteresis(cfg.stability.enter_frames, cfg.stability.exit_frames, cfg.stability.min_confidence)
-        self.fsm = StateMachine({n: g.mode for n, g in cfg.gestures.items()}, cfg.safety.unlock_gesture, cfg.safety.unlock_frames)
 
         macros = {name: parse_macro(steps) for name, steps in cfg.macros.items()}
         self.actions = ActionRunner(keyboard, mouse, macros, cfg.keyboard.repeat_ms)
-        self.modes = build_modes(cfg, mouse, self.actions, virtual_screen().width)
+        self._mouse = mouse
         self._point_of = anchor.palm_center if cfg.cursor.point == "palm" else anchor.index_tip
         self._current: Mode | None = None
+        self.rebuild_control()
+
+    def rebuild_control(self) -> None:
+        """apply changed gesture -> mode settings, also locks again"""
+        self._switch(None, None, 0)
+        self.fsm = StateMachine({n: g.mode for n, g in self.cfg.gestures.items()}, self.cfg.safety.unlock_gesture, self.cfg.safety.unlock_frames)
+        self.modes = build_modes(self.cfg, self._mouse, self.actions, virtual_screen().width)
 
     def step(self) -> Tick | None:
         """None when the camera gave no frame"""
