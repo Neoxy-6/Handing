@@ -25,6 +25,10 @@ def validate(config: Config) -> None:
     _positive(config.stability.exit_frames, "stability.exit_frames")
     _positive(config.safety.unlock_frames, "safety.unlock_frames")
     _positive(config.keyboard.repeat_ms, "keyboard.repeat_ms")
+    _positive(config.cursor.joystick_speed, "cursor.joystick_speed")
+    _positive(config.cursor.joystick_curve, "cursor.joystick_curve")
+    if not 0 <= config.cursor.joystick_deadzone < 1:
+        raise ValueError(f"cursor.joystick_deadzone must be in [0, 1), got {config.cursor.joystick_deadzone!r}")
 
     try:
         HotKey.parse(config.safety.estop_hotkey)

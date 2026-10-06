@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-MODES = ("mouse", "drag", "lock", "scroll", "trigger", "action")
+MODES = ("mouse", "joystick", "drag", "lock", "scroll", "trigger", "action")
 MOUSE_MODES = ("relative", "absolute", "joystick")
 POINTS = ("palm", "index")
 CONTROL_HANDS = ("any", "left", "right")
@@ -35,6 +35,9 @@ class CursorConfig:
     point: str = "palm"
     min_cutoff: float = 0.5
     beta: float = 0.02
+    joystick_deadzone: float = 0.1  # share of the stick radius that does nothing
+    joystick_speed: float = 1500.0  # screen px per second at full push
+    joystick_curve: float = 2.0  # 1 = linear, higher = finer near the center
 
 @dataclass
 class SafetyConfig:

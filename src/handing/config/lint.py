@@ -5,7 +5,7 @@ def lint(cfg: Config, gesture_names: list[str]) -> list[str]:
     """problems that do not break the config but probably are not what the user wants"""
     out = []
 
-    mouse = sorted({split_key(key)[0] for key, g in cfg.gestures.items() if g.mode == "mouse"})
+    mouse = sorted({split_key(key)[0] for key, g in cfg.gestures.items() if g.mode in ("mouse", "joystick")})
     if len(mouse) > 1:
         out.append(f"{', '.join(mouse)} all move the mouse, they will fight over the cursor")
 
