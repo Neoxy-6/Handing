@@ -9,6 +9,7 @@ from handing.output.keyboard import Keyboard
 from handing.output.mouse import Mouse
 from handing.pipeline.gesture_editor import GestureEditor
 from handing.pipeline.runner import Runner, Tick
+from handing.recognition.similarity import find_similar
 
 class Worker(QThread):
     """runs the pipeline off the ui thread, output starts disabled; gesture edits are queued and applied here"""
@@ -17,7 +18,7 @@ class Worker(QThread):
     output_changed = Signal(bool)  # True when output is live
     samples_changed = Signal(object)  # dict gesture name -> sample count
     record_progress = Signal(int)
-    record_done = Signal(str)
+    record_finished = Signal(str, object, object)  # name, poses, recognition.similarity.Similar | None
     failed = Signal(str)
 
     def __init__(self, editor: GestureEditor):
@@ -40,6 +41,10 @@ class Worker(QThread):
 
     def cancel_record(self) -> None:
         self._jobs.put(lambda runner: self._start_record(None, 0))
+
+    def add_samples(self, name: str, poses: list) -> None:
+        """called after the user reviewed a finished recording"""
+        self._jobs.put(lambda runner: self._add(runner, name, poses))
 
     def delete(self, name: str) -> None:
         self._jobs.put(lambda runner: self._edit(runner, self.editor.delete, name))
@@ -85,9 +90,13 @@ class Worker(QThread):
 
         if len(self._poses) >= self._record_count:
             name, self._record_name = self._record_name, None
-            self.editor.add(name, self._poses)
-            self._refresh(runner)
-            self.record_done.emit(name)
+            rec = self.cfg.recognition
+            similar = find_similar(self.editor.samples, name, self._poses, rec.k, rec.max_distance)
+            self.record_finished.emit(name, self._poses, similar)
+
+    def _add(self, runner: Runner, name: str, poses: list) -> None:
+        self.editor.add(name, poses)
+        self._refresh(runner)
 
     def _edit(self, runner: Runner, change, *args) -> None:
         change(*args)

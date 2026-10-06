@@ -22,6 +22,18 @@ class SampleSet:
 
         self._poses[name] = poses
 
+    def thin(self, name: str, n: int) -> None:
+        """keep n evenly spaced samples, so the whole recording stays covered"""
+        poses = self._poses[name]
+        if len(poses) > n:
+            self._poses[name] = poses[np.linspace(0, len(poses) - 1, n).round().astype(int)]
+
+    def without(self, name: str) -> "SampleSet":
+        other = SampleSet()
+        other._poses = {k: v for k, v in self._poses.items() if k != name}
+
+        return other
+
     def delete(self, name: str) -> None:
         self._poses.pop(name, None)
 
