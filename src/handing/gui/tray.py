@@ -39,6 +39,7 @@ class Tray(QSystemTrayIcon):
         self.worker = worker
         self._state = State.STANDBY
         self._live = False
+        self._hint_shown = False
 
         menu = QMenu()
         menu.addAction("show", self.show_window)
@@ -50,6 +51,7 @@ class Tray(QSystemTrayIcon):
         self.setContextMenu(menu)
 
         self.activated.connect(self._on_activated)
+        window.visibility_changed.connect(self._on_window_visible)
         worker.tick.connect(lambda tick: self._update(tick.status.state, self._live))
         worker.output_changed.connect(lambda live: self._update(self._state, live))
         self._update(self._state, self._live, force = True)
@@ -66,6 +68,19 @@ class Tray(QSystemTrayIcon):
         self.output.blockSignals(True)
         self.output.setChecked(live)
         self.output.blockSignals(False)
+
+    def _on_window_visible(self, visible: bool) -> None:
+        """tell where the app went the first time it hides, windows 11 tucks new icons under ^"""
+        if visible or self._hint_shown or self.window.quitting:
+            return
+
+        self._hint_shown = True
+        self.showMessage(
+            "Handing is still running",
+            "Click the Handing icon in the tray (under ^ on the taskbar) to open it again.",
+            self.icon(),
+            5000,
+        )
 
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
