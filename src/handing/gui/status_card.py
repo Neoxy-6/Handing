@@ -52,7 +52,7 @@ class StatusCard(QFrame):
         self.gesture.setText(tick.status.gesture or "-")
 
         pred = tick.prediction
-        self.raw.setText(f"raw  {pred.name}  ·  {pred.confidence:.0%}  ·  d {pred.distance:.2f}" if pred else "no hand")
+        self.raw.setText(f"{pred.name}  ·  {pred.confidence:.0%}  ·  {pred.distance:.2f}" if pred else "no hand")
 
         now = time.perf_counter()
         self.fps.setText(f"{1 / max(now - self._last_tick, 1e-6):.0f} fps")

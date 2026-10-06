@@ -27,9 +27,9 @@ class GesturePanel(QFrame):
         buttons = QGridLayout()
         buttons.setSpacing(6)
         for text, slot, row, col, span, role in [
-            ("edit gesture", self.settings, 0, 0, 2, "primary"),
+            ("edit", self.settings, 0, 0, 2, "primary"),
             ("add", self.add, 1, 0, 1, ""),
-            ("record more", self.record_more, 1, 1, 1, ""),
+            ("record", self.record_more, 1, 1, 1, ""),
             ("rename", self.rename, 2, 0, 1, ""),
             ("delete", self.delete, 2, 1, 1, ""),
         ]:

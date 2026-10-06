@@ -30,10 +30,10 @@ class MainWindow(QMainWindow):
         self.output.setCheckable(True)
         self.output.setMinimumHeight(36)
 
-        settings = QPushButton("app settings")
+        settings = QPushButton("settings")
         settings.setMinimumHeight(36)
         settings.clicked.connect(self.open_settings)
-        hint = QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)} turns output on / off anywhere")
+        hint = QLabel(f"{pretty_hotkey(worker.cfg.safety.estop_hotkey)}  on / off")
         hint.setProperty("role", "muted")
         hint.setWordWrap(True)
 
@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         self.output.setChecked(live)
         self.output.blockSignals(False)
 
-        self.output.setText("output ON" if live else "output OFF")
+        self.output.setText("ON" if live else "OFF")
         set_role(self.output, "danger" if live else "")
 
     def open_settings(self) -> None:

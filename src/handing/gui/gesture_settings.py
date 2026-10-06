@@ -53,13 +53,13 @@ class GestureSettings(QDialog):
         self.threshold = spin(0.05, 0.5, 0.01)
         self.directions = {d: ActionEdit(macros) for d in DIRECTIONS}
         self.action = ActionEdit(macros, optional = False)
-        self.repeat = QCheckBox("repeat while held")
+        self.repeat = QCheckBox("repeat")
 
         for mode in (NONE, *MODES):
             if mode == "scroll":
                 page = form_page(("sensitivity", self.sensitivity))
             elif mode == "trigger":
-                page = form_page(("threshold (frame width)", self.threshold), *self.directions.items())
+                page = form_page(("threshold", self.threshold), *self.directions.items())
             elif mode == "action":
                 page = form_page(("action", self.action), ("", self.repeat))
             else:
