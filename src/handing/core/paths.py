@@ -25,3 +25,7 @@ def user_dir() -> Path:
 
 def config_path() -> Path:
     return user_dir() / "config.yaml"
+
+def user_gestures() -> Path:
+    """user's gesture samples, the app copies default.npz here on first run"""
+    return user_dir() / "gestures.npz"
