@@ -6,7 +6,9 @@ from PySide6.QtWidgets import (
 )
 
 from handing.config.schema import CONTROL_HANDS, POINTS, Config
+from handing.config.lint import lint
 from handing.config.validate import validate
+from handing.gui.confirm import confirm_warnings
 
 def int_box(low: int, high: int) -> QSpinBox:
     box = QSpinBox()
@@ -90,6 +92,7 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("settings")
         self.cfg = cfg
+        self.gesture_names = gesture_names
         self.rows = []
 
         tabs = QTabWidget()
@@ -112,6 +115,19 @@ class SettingsDialog(QDialog):
         layout.addWidget(tabs)
         layout.addWidget(buttons)
 
+        widgets = {(section, name): widget for section, name, widget in self.rows}
+        self._hands = widgets["detection", "hands"]
+        self._control = widgets["detection", "control_hand"]
+        self._control.currentTextChanged.connect(self._sync_hands)
+        self._sync_hands(self._control.currentText())
+
+    def _sync_hands(self, control: str) -> None:
+        """a chosen control hand needs both hands detected, or the other one may hide it"""
+        if control != "any":
+            self._hands.setCurrentText("2")
+
+        self._hands.setEnabled(control == "any")
+
     def result_config(self) -> Config:
         new = copy.deepcopy(self.cfg)
 
@@ -122,10 +138,12 @@ class SettingsDialog(QDialog):
         return new
 
     def accept(self) -> None:
+        new = self.result_config()
         try:
-            validate(self.result_config())
+            validate(new)
         except ValueError as e:
             QMessageBox.warning(self, "settings", str(e))
             return
 
-        super().accept()
+        if confirm_warnings(self, "settings", lint(new, self.gesture_names)):
+            super().accept()

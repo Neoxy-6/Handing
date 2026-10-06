@@ -4,7 +4,12 @@ from PySide6.QtWidgets import (
 )
 
 from handing.config.schema import DIRECTIONS, MODES, Config, GestureConfig
+import copy
+
+from handing.config.lint import lint
+from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
+from handing.gui.confirm import confirm_warnings
 from handing.output.macro import parse_macro
 
 NONE = "(none)"
@@ -32,9 +37,12 @@ def spin(low: float, high: float, step: float) -> QDoubleSpinBox:
 class GestureSettings(QDialog):
     """choose a mode and its options for one gesture"""
 
-    def __init__(self, cfg: Config, name: str, parent = None):
+    def __init__(self, cfg: Config, name: str, gesture_names: list[str], parent = None):
         super().__init__(parent)
         self.setWindowTitle(f"settings: {name}")
+        self.cfg = cfg
+        self.name = name
+        self.gesture_names = gesture_names
         macros = {n: parse_macro(steps) for n, steps in cfg.macros.items()}
         current = cfg.gestures.get(name)
 
@@ -113,8 +121,22 @@ class GestureSettings(QDialog):
 
     def accept(self) -> None:
         error = self._error()
+        candidate = copy.deepcopy(self.cfg)
+        gesture = self.result_gesture()
+        if gesture is None:
+            candidate.gestures.pop(self.name, None)
+        else:
+            candidate.gestures[self.name] = gesture
+
+        if not error:
+            try:
+                validate(candidate)
+            except ValueError as e:
+                error = str(e)
+
         if error:
             QMessageBox.warning(self, self.windowTitle(), error)
             return
 
-        super().accept()
+        if confirm_warnings(self, self.windowTitle(), lint(candidate, self.gesture_names)):
+            super().accept()

@@ -63,7 +63,7 @@ class GesturePanel(QWidget):
         if not name:
             return
 
-        dialog = GestureSettings(self.worker.cfg, name, self)
+        dialog = GestureSettings(self.worker.cfg, name, self.names, self)
         if dialog.exec():
             self.worker.configure(name, dialog.result_gesture())
 
@@ -85,5 +85,12 @@ class GesturePanel(QWidget):
 
     def delete(self) -> None:
         name = self.selected()
-        if name and QMessageBox.question(self, "delete gesture", f"delete '{name}' and all its samples?") == QMessageBox.StandardButton.Yes:
+        if not name:
+            return
+
+        text = f"delete '{name}' and all its samples?"
+        if name == self.worker.cfg.safety.unlock_gesture:
+            text += f"\n\n'{name}' is the unlock gesture, pick another one in app settings or control can never be unlocked."
+
+        if QMessageBox.question(self, "delete gesture", text) == QMessageBox.StandardButton.Yes:
             self.worker.delete(name)
