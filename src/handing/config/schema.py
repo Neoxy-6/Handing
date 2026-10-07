@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 MODES = ("mouse", "drag", "scroll", "lock", "trigger", "action")
 STYLES_FOR = {  # modes that take a style, first one is the default
-    "mouse": ("relative", "joystick"),
+    "mouse": ("joystick", "relative"),
 }
 STYLED = tuple(STYLES_FOR)
 MOUSE_MODES = ("relative", "absolute", "joystick")
