@@ -40,7 +40,8 @@ class Runner:
         num_hands = cfg.detection.hands if cfg.detection.control_hand == "any" else 2
         self.landmarker = Landmarker(paths.model_path(), num_hands, cfg.detection.min_confidence, cfg.camera.frame_mirrored)
 
-        self.classifier = Classifier(samples, cfg.recognition.k, cfg.recognition.max_distance)
+        rec = cfg.recognition
+        self.classifier = Classifier(samples, rec.k, rec.max_distance, rec.align_rotation)
         self.hyst = Hysteresis(cfg.stability.enter_frames, cfg.stability.exit_frames, cfg.stability.min_confidence)
 
         macros = {name: parse_macro(steps) for name, steps in cfg.macros.items()}

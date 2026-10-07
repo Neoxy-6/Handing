@@ -106,7 +106,7 @@ class Worker(QThread):
         if len(self._poses) >= self._record_count:
             name, self._record_name = self._record_name, None
             rec = self.cfg.recognition
-            similar = find_similar(self.editor.samples, name, self._poses, rec.k, rec.max_distance)
+            similar = find_similar(self.editor.samples, name, self._poses, rec.k, rec.max_distance, align = rec.align_rotation)
             self.record_finished.emit(name, self._poses, similar)
 
     def _add(self, runner: Runner, name: str, poses: list) -> None:

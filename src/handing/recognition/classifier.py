@@ -16,8 +16,9 @@ class Prediction:
     distance: float  # mean distance to the winning neighbors
 
 class Classifier:
-    def __init__(self, samples: SampleSet, k: int = 5, max_distance: float = 2.0):
+    def __init__(self, samples: SampleSet, k: int = 5, max_distance: float = 2.0, align: bool = False):
         self.max_distance = max_distance
+        self.align = align  # compare poses turned upright
         self._knn = KNN(k)
         self.update(samples)
 
@@ -27,13 +28,13 @@ class Classifier:
         self._size = len(labels)
 
         if self._size:
-            self._knn.fit(np.array([vector.from_pose(p) for p in poses]), labels)
+            self._knn.fit(np.array([vector.from_pose(p, self.align) for p in poses]), labels)
 
     def predict(self, hand: Hand, width: int, height: int) -> Prediction:
         if not self._size:
             return Prediction(UNKNOWN, 0.0, float("inf"))
 
-        names, ratios, dists = self._knn.query(vector.from_hand(hand, width, height))
+        names, ratios, dists = self._knn.query(vector.from_hand(hand, width, height, self.align))
         name, ratio, dist = str(names[0]), float(ratios[0]), float(dists[0])
 
         if dist > self.max_distance:

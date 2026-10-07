@@ -34,6 +34,7 @@ class DetectionConfig:
 class RecognitionConfig:
     k: int = 5
     max_distance: float = 2.0
+    align_rotation: bool = False  # turn poses upright before comparing, gestures that differ only by direction merge
 
 @dataclass
 class StabilityConfig:
