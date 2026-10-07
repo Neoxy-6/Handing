@@ -1,8 +1,8 @@
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from handing.control.states import State
+from handing.gui.icon import state_icon
 from handing.gui.style import DANGER, STATE_COLORS
 from handing.gui.worker import Worker
 
@@ -10,23 +10,8 @@ COLORS = STATE_COLORS
 LIVE_DOT = DANGER
 
 def make_icon(state: State, live: bool) -> QIcon:
-    """state colored circle, red dot in the corner while output is live"""
-    pixmap = QPixmap(64, 64)
-    pixmap.fill(Qt.GlobalColor.transparent)
-
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(QColor(COLORS[state]))
-    painter.drawEllipse(4, 4, 56, 56)
-
-    if live:
-        painter.setBrush(QColor(LIVE_DOT))
-        painter.drawEllipse(36, 36, 26, 26)
-
-    painter.end()
-
-    return QIcon(pixmap)
+    """the app hand on a state colored square, red corner square while output is live"""
+    return state_icon(COLORS[state], LIVE_DOT if live else None)
 
 class Tray(QSystemTrayIcon):
     def __init__(self, window, worker: Worker):

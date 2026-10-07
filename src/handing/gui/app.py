@@ -1,5 +1,7 @@
+import ctypes
 import sys
 
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from handing.config import loader
@@ -23,8 +25,16 @@ def load_samples() -> SampleSet:
 
     return samples
 
+def own_taskbar_entry() -> None:
+    """without this windows groups the window under python.exe and shows its icon"""
+    if sys.platform == "win32":
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Handing.App")
+
 def main() -> int:
+    own_taskbar_entry()
     app = QApplication(sys.argv)
+    app.setApplicationName("Handing")
+    app.setWindowIcon(QIcon(str(paths.app_icon())))
     app.setQuitOnLastWindowClosed(False)
     app.setStyleSheet(SHEET)
 

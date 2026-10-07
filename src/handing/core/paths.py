@@ -13,6 +13,9 @@ def recordings_dir() -> Path:
 
     return path
 
+def app_icon() -> Path:
+    return ROOT / "assets" / "icon" / "handing.ico"
+
 def default_gestures() -> Path:
     return ROOT / "assets" / "gestures" / "default.npz"
 
