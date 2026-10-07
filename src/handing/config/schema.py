@@ -6,6 +6,7 @@ STYLES_FOR = {  # modes that take a style, first one is the default
 }
 STYLED = tuple(STYLES_FOR)
 POINTS = ("palm", "index")
+POINTED = ("mouse", "drag", "scroll", "trigger")  # modes that follow a point on the hand
 CONTROL_HANDS = ("any", "left", "right")
 DIRECTIONS = ("left", "right", "up", "down")
 
@@ -42,15 +43,14 @@ class StabilityConfig:
 
 @dataclass
 class CursorConfig:
-    point: str = "index"
     min_cutoff: float = 0.5
     beta: float = 0.015
-    joystick_deadzone: float = 0.15  # share of the stick radius that does nothing
+    joystick_deadzone: float = 0.1  # share of the stick radius that does nothing
     joystick_speed: float = 600.0  # screen px per second at full push
     joystick_curve: float = 1.5  # 1 = linear, higher = finer near the center
     joystick_center_x: float = 0.5  # as seen in the preview, 0 = left edge
-    joystick_center_y: float = 0.5  # 0 = top edge
-    joystick_radius: float = 0.4  # share of the frame height for full push
+    joystick_center_y: float = 0.3  # 0 = top edge
+    joystick_radius: float = 0.2  # share of the frame height for full push
 
 @dataclass
 class SafetyConfig:
@@ -77,6 +77,7 @@ class UiConfig:
 class GestureConfig:
     mode: str
     style: str = "relative"  # mouse: relative or joystick, see STYLES_FOR
+    point: str = "palm"  # part of the hand the mode follows, see POINTED
     sensitivity: float = 1.0  # scroll
     threshold: float = 0.15  # trigger, fraction of frame width
     left: str | None = None
@@ -88,8 +89,9 @@ class GestureConfig:
 
 def default_gestures() -> dict[str, GestureConfig]:
     return {
-        "point": GestureConfig("mouse", style = "joystick"),
+        "point": GestureConfig("mouse", style = "joystick", point = "index"),
         "fist": GestureConfig("scroll"),
+        "peace": GestureConfig("action", action = "click:left"),
     }
 
 @dataclass
