@@ -2,7 +2,14 @@ import os
 from pathlib import Path
 
 APP_NAME = "Handing"
-ROOT = Path(__file__).resolve().parents[3]
+
+def _root() -> Path:
+    """folder that holds assets/: the repo when run from source, the exe folder when built with nuitka"""
+    here = Path(__file__).resolve()  # src/handing/core/paths.py, or dist/Handing/handing/core/paths.py when compiled
+
+    return here.parents[2] if "__compiled__" in globals() else here.parents[3]
+
+ROOT = _root()
 
 def model_path(name: str = "hand_landmarker.task") -> Path:
     return ROOT / "assets" / "models" / name

@@ -7,3 +7,7 @@ scripts/
 __pycache__/
 *.egg-info/
 recordings/
+
+build/
+dist/
+build.log
