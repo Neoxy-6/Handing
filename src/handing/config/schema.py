@@ -33,7 +33,7 @@ class DetectionConfig:
 class RecognitionConfig:
     k: int = 5
     max_distance: float = 2.0
-    align_rotation: bool = False  # turn poses upright before comparing, gestures that differ only by direction merge
+    align_rotation: bool = True  # turn poses upright before comparing, gestures that differ only by direction merge
 
 @dataclass
 class StabilityConfig:
@@ -58,7 +58,7 @@ class SafetyConfig:
     estop_hotkey: str = "<ctrl>+<alt>+q"
     lock: bool = False  # start locked, need the unlock gesture, lock again after the hand leaves
     lock_after: float = 5.0  # seconds without a hand before locking again
-    unlock_gesture: str = "paper"
+    unlock_gesture: str = "peace"
     unlock_frames: int = 15
 
 @dataclass
@@ -90,7 +90,6 @@ class GestureConfig:
 
 def default_gestures() -> dict[str, GestureConfig]:
     return {
-        "peace": GestureConfig("drag"),
         "point": GestureConfig("mouse", style = "joystick"),
         "fist": GestureConfig("scroll"),
     }
