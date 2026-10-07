@@ -21,7 +21,7 @@ class JoystickMode(Mode):
     """distance from the stick center sets a velocity, like a gamepad stick; move gets the step each frame"""
 
     def __init__(self, move: Callable[[float, float], None], center: np.ndarray, radius: float, deadzone: float, max_speed: float, curve: float, smoother: OneEuro):
-        self.move = move  # cursor px or wheel notches
+        self.move = move  # gets the cursor step in px
         self.center = center  # camera px
         self.radius = radius  # camera px for full push
         self.deadzone = deadzone  # share of radius

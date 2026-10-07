@@ -6,7 +6,7 @@ from handing.control.modes.base import Mode
 from handing.control.modes.drag import DragMode
 from handing.control.modes.joystick import JoystickMode
 from handing.control.modes.mouse import MouseMode
-from handing.control.modes.scroll import ScrollMode, Wheel
+from handing.control.modes.scroll import ScrollMode
 from handing.control.modes.trigger import TriggerMode
 from handing.filtering.one_euro import OneEuro
 from handing.output.macro import ActionRunner
@@ -51,8 +51,6 @@ def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: i
             modes[name] = cursor(g.style)
         elif g.mode == "drag":
             modes[name] = DragMode(cursor(g.style), mouse)
-        elif g.mode == "scroll" and g.style == "joystick":
-            modes[name] = stick(Wheel(mouse).move, c.joystick_scroll_speed * g.sensitivity)
         elif g.mode == "scroll":
             modes[name] = ScrollMode(mouse, g.sensitivity, smoother())
         elif g.mode == "trigger":

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 
 from handing.config.keys import make_key
 from handing.config.lint import new_warnings
-from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, STYLED, STYLES, Config, GestureConfig
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, STYLES_FOR, Config, GestureConfig
 from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
 from handing.gui.confirm import confirm_warnings
@@ -17,6 +17,10 @@ NONE = "(none)"
 NONE_HINTS = {
     "any": "recognized, but does nothing",
     "side": "no override, this hand uses the 'any' setting",
+}
+STYLE_TIPS = {
+    "mouse": "relative: follows hand movement / joystick: distance from the stick center sets the speed",
+    "drag": "relative: follows hand movement / joystick: distance from the stick center sets the speed",
 }
 HINTS = {
     "mouse": "moves the cursor\nspeed and stick settings are in settings > cursor",
@@ -60,8 +64,6 @@ class GestureSettings(QDialog):
         self.none_hint = QLabel(NONE_HINTS["any"])
         self.mode = QComboBox()
         self.style = QComboBox()
-        self.style.addItems(STYLES)
-        self.style.setToolTip("relative: follows hand movement\njoystick: distance from the stick center sets the speed")
         self.mode.addItems([NONE, *MODES])
         if not cfg.safety.lock:
             self.mode.model().item(1 + MODES.index("lock")).setEnabled(False)  # locking is off in settings
@@ -95,7 +97,7 @@ class GestureSettings(QDialog):
         layout.addWidget(buttons)
 
         self.mode.currentIndexChanged.connect(self.pages.setCurrentIndex)
-        self.mode.currentTextChanged.connect(lambda mode: self.style.setEnabled(mode in STYLED))
+        self.mode.currentTextChanged.connect(self._sync_style)
         self.hand.currentTextChanged.connect(self._load_hand)
         self._load_hand("any")
 
@@ -106,10 +108,24 @@ class GestureSettings(QDialog):
         self.none_hint.setText(NONE_HINTS["any" if hand == "any" else "side"])
         self._load(self.cfg.gestures.get(self.key()) or GestureConfig(NONE))
 
+    def _sync_style(self, mode: str, keep: str | None = None) -> None:
+        """offer the styles this mode supports, keep the choice when it still fits"""
+        styles = STYLES_FOR.get(mode, ())
+        current = keep or self.style.currentText()
+
+        self.style.blockSignals(True)
+        self.style.clear()
+        self.style.addItems(styles)
+        if styles:
+            self.style.setCurrentText(current if current in styles else styles[0])
+        self.style.blockSignals(False)
+
+        self.style.setEnabled(bool(styles))
+        self.style.setToolTip(STYLE_TIPS.get(mode, ""))
+
     def _load(self, g: GestureConfig) -> None:
         self.mode.setCurrentText(g.mode)
-        self.style.setCurrentText(g.style)
-        self.style.setEnabled(g.mode in STYLED)
+        self._sync_style(g.mode, g.style)
         self.pages.setCurrentIndex(self.mode.currentIndex())
         self.sensitivity.setValue(g.sensitivity)
         self.threshold.setValue(g.threshold)
@@ -124,7 +140,7 @@ class GestureSettings(QDialog):
             return None
 
         g = GestureConfig(mode)
-        if mode in STYLED:
+        if mode in STYLES_FOR:
             g.style = self.style.currentText()
         if mode == "scroll":
             g.sensitivity = self.sensitivity.value()

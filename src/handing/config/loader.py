@@ -3,15 +3,14 @@ from pathlib import Path
 
 import yaml
 
-from handing.config.schema import Config, GestureConfig
+from handing.config.schema import Config, CursorConfig, GestureConfig
 from handing.config.validate import validate
 from handing.core import paths
 
 def _section(cls, raw: dict | None, where: str):
     """build a dataclass from a dict, missing keys keep defaults, unknown keys are errors"""
     raw = raw or {}
-    if cls is GestureConfig and raw.get("mode") == "joystick":
-        raw = {**raw, "mode": "mouse", "style": "joystick"}  # joystick used to be its own mode
+    raw = _migrate(cls, raw)
     known = {f.name for f in fields(cls)}
     unknown = set(raw) - known
 
@@ -23,6 +22,19 @@ def _section(cls, raw: dict | None, where: str):
             raise ValueError(f"{where}.{f.name} must be {f.type.__name__}, got {raw[f.name]!r}")
 
     return cls(**raw)
+
+def _migrate(cls, raw: dict) -> dict:
+    """read configs written by older versions"""
+    if cls is GestureConfig and raw.get("mode") == "joystick":
+        raw = {**raw, "mode": "mouse", "style": "joystick"}  # joystick used to be its own mode
+
+    if cls is GestureConfig and raw.get("mode") == "scroll":
+        raw = {k: v for k, v in raw.items() if k != "style"}  # scroll has no styles any more
+
+    if cls is CursorConfig:
+        raw = {k: v for k, v in raw.items() if k != "joystick_scroll_speed"}  # joystick scrolling was dropped
+
+    return raw
 
 def _fits(value, kind: type) -> bool:
     if kind is float:
