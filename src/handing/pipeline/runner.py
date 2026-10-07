@@ -35,10 +35,10 @@ class Runner:
 
     def __init__(self, cfg: Config, keyboard, mouse, samples: SampleSet):
         self.cfg = cfg
-        self.camera = Camera(cfg.camera.index)
+        self.camera = Camera(cfg.camera.index, mirror = cfg.camera.flip)
         self.throttle = Throttle(cfg.camera.idle_fps)
         num_hands = cfg.detection.hands if cfg.detection.control_hand == "any" else 2
-        self.landmarker = Landmarker(paths.model_path(), num_hands, cfg.detection.min_confidence, cfg.camera.mirrored)
+        self.landmarker = Landmarker(paths.model_path(), num_hands, cfg.detection.min_confidence, cfg.camera.frame_mirrored)
 
         self.classifier = Classifier(samples, cfg.recognition.k, cfg.recognition.max_distance)
         self.hyst = Hysteresis(cfg.stability.enter_frames, cfg.stability.exit_frames, cfg.stability.min_confidence)
@@ -98,7 +98,7 @@ class Runner:
     def _point(self, hand: Hand, hands: HandFrame) -> np.ndarray:
         """camera px, x toward the user's right"""
         point = self._point_of(hand) * (hands.width, hands.height)
-        if not self.cfg.camera.mirrored:
+        if not self.cfg.camera.frame_mirrored:
             point[0] = hands.width - point[0]
 
         return point

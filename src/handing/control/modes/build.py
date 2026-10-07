@@ -23,7 +23,7 @@ def stick_area(cfg: Config) -> tuple[np.ndarray, float]:
 def control_center(cfg: Config, preview_center: np.ndarray) -> np.ndarray:
     """control points have x toward the user's right, the raw preview is flipped unless mirrored"""
     center = preview_center.copy()
-    if not cfg.camera.mirrored:
+    if not cfg.camera.frame_mirrored:
         center[0] = cfg.camera.width - center[0]
 
     return center

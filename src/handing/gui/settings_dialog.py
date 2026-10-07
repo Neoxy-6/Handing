@@ -64,7 +64,8 @@ def pages(gesture_names: list[str]) -> list:
     return [
         ("camera", "reopens the camera", [
             ("camera", "index", "camera", "camera index, 0 is the first one", int_box(0, 9)),
-            ("camera", "mirrored", "mirrored", "the frame is already flipped like a mirror", QCheckBox()),
+            ("camera", "flip", "flip", "flip the picture left to right, like looking in a mirror", QCheckBox()),
+            ("camera", "mirrored", "driver flips", "tick only if the camera driver already flips the picture", QCheckBox()),
             ("camera", "idle_fps", "idle fps", "frames per second while no hand is seen, 0 = never slow down", int_box(0, 30)),
             ("detection", "hands", "hands", "how many hands to detect", choice(1, 2)),
             ("detection", "control_hand", "control hand", "only this hand controls, the other is ignored", choice(*CONTROL_HANDS)),
