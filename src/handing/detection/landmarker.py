@@ -53,4 +53,5 @@ def _to_hand(lms, world, cats, mirrored: bool) -> Hand:
         world = np.array([(p.x, p.y, p.z) for p in world], dtype = np.float32),
         handedness = handedness,
         score = top.score,
+        chirality = top.category_name,  # mediapipe reads it off the picture as it is
     )

@@ -17,7 +17,7 @@ def normalize(hand: Hand, width: int, height: int) -> np.ndarray:
     pts = pts / palm
 
     # left hand
-    if hand.handedness == "Left":
+    if hand.looks_left:  # by shape on screen, so a flipped frame gives the same features
         pts[:, 0] *= -1
 
     return pts

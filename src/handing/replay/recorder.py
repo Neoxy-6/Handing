@@ -34,5 +34,6 @@ def save(frames: list[HandFrame], path: Path) -> None:
         landmarks = np.array([h.landmarks for _, h in hands], dtype = np.float32).reshape(-1, 21, 3),
         world = np.array([h.world for _, h in hands], dtype = np.float32).reshape(-1, 21, 3),
         handedness = np.array([h.handedness for _, h in hands], dtype = "U5"),
+        chirality = np.array([h.chirality or h.handedness for _, h in hands], dtype = "U5"),
         score = np.array([h.score for _, h in hands], dtype = np.float32),
     )

@@ -9,10 +9,12 @@ def load(path: Path) -> list[HandFrame]:
     data = np.load(path)
     grouped: list[list[Hand]] = [[] for _ in data["timestamp_ms"]]
 
-    for i, lms, world, side, score in zip(
-        data["frame_index"], data["landmarks"], data["world"], data["handedness"], data["score"]
+    looks = data["chirality"] if "chirality" in data else data["handedness"]  # older files predate chirality
+
+    for i, lms, world, side, look, score in zip(
+        data["frame_index"], data["landmarks"], data["world"], data["handedness"], looks, data["score"]
     ):
-        grouped[i].append(Hand(lms, world, str(side), float(score)))
+        grouped[i].append(Hand(lms, world, str(side), float(score), str(look)))
 
     return [
         HandFrame(int(t), int(w), int(h), tuple(hands))
