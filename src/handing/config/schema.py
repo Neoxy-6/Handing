@@ -42,7 +42,7 @@ class StabilityConfig:
 
 @dataclass
 class CursorConfig:
-    point: str = "palm"
+    point: str = "index"
     min_cutoff: float = 0.5
     beta: float = 0.015
     joystick_deadzone: float = 0.15  # share of the stick radius that does nothing
@@ -57,7 +57,7 @@ class SafetyConfig:
     estop_hotkey: str = "<ctrl>+<alt>+q"
     lock: bool = False  # start locked, need the unlock gesture, lock again after the hand leaves
     lock_after: float = 5.0  # seconds without a hand before locking again
-    unlock_gesture: str = "peace"
+    unlock_gesture: str = "point"
     unlock_frames: int = 15
 
 @dataclass
