@@ -5,7 +5,6 @@ STYLES_FOR = {  # modes that take a style, first one is the default
     "mouse": ("joystick", "relative"),
 }
 STYLED = tuple(STYLES_FOR)
-MOUSE_MODES = ("relative", "absolute", "joystick")
 POINTS = ("palm", "index")
 CONTROL_HANDS = ("any", "left", "right")
 DIRECTIONS = ("left", "right", "up", "down")
@@ -63,7 +62,6 @@ class SafetyConfig:
 
 @dataclass
 class MouseConfig:
-    mode: str = "relative"
     sensitivity: float = 1.5
     deadzone: float = 0.2  # camera px per frame, after smoothing
 

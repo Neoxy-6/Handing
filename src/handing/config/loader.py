@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from handing.config.schema import Config, CursorConfig, GestureConfig
+from handing.config.schema import Config, CursorConfig, GestureConfig, MouseConfig
 from handing.config.validate import validate
 from handing.core import paths
 
@@ -30,6 +30,9 @@ def _migrate(cls, raw: dict) -> dict:
 
     if cls is GestureConfig and raw.get("mode") in ("scroll", "drag"):
         raw = {k: v for k, v in raw.items() if k != "style"}  # these modes have no styles any more
+
+    if cls is MouseConfig:
+        raw = {k: v for k, v in raw.items() if k != "mode"}  # mouse.mode was never used, styles live on gestures
 
     if cls is CursorConfig:
         raw = {k: v for k, v in raw.items() if k != "joystick_scroll_speed"}  # joystick scrolling was dropped
