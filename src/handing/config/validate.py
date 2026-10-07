@@ -16,7 +16,6 @@ def validate(config: Config) -> None:
     """raise ValueError with the config path of the first problem"""
     _one_of(config.detection.hands, (1, 2), "detection.hands")
     _one_of(config.detection.control_hand, CONTROL_HANDS, "detection.control_hand")
-    _one_of(config.cursor.point, POINTS, "cursor.point")
 
     _positive(config.recognition.k, "recognition.k")
     _positive(config.recognition.max_distance, "recognition.max_distance")
@@ -58,6 +57,7 @@ def validate(config: Config) -> None:
             raise ValueError(f"{where}: the part after @ must be left or right")
 
         _one_of(g.mode, MODES, f"{where}.mode")
+        _one_of(g.point, POINTS, f"{where}.point")
         if g.mode in STYLES_FOR:
             _one_of(g.style, STYLES_FOR[g.mode], f"{where}.style")
 

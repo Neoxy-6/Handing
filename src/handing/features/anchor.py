@@ -11,3 +11,7 @@ def palm_center(hand: Hand) -> np.ndarray:
 
 def index_tip(hand: Hand) -> np.ndarray:
     return hand.landmarks[INDEX_TIP, :2].copy()
+
+def of(hand: Hand, point: str) -> np.ndarray:
+    """'palm' or 'index', see config POINTS"""
+    return index_tip(hand) if point == "index" else palm_center(hand)

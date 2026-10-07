@@ -47,7 +47,6 @@ class Runner:
         macros = {name: parse_macro(steps) for name, steps in cfg.macros.items()}
         self.actions = ActionRunner(keyboard, mouse, macros, cfg.keyboard.repeat_ms)
         self._mouse = mouse
-        self._point_of = anchor.palm_center if cfg.cursor.point == "palm" else anchor.index_tip
         self._current: Mode | None = None
         self.rebuild_control()
 
@@ -80,7 +79,7 @@ class Runner:
         stable = self.hyst.update(pred.name, pred.confidence)
         status = self.fsm.update(resolve(self.cfg.gestures, stable, hand.handedness), t)
 
-        point = self._point(hand, hands)
+        point = self._point(hand, hands, status.gesture)
         mode = self.modes.get(status.gesture) if status.state == State.ACTIVE else None
 
         if mode is self._current and mode:
@@ -96,9 +95,10 @@ class Runner:
 
         return next((h for h in hands.hands if wanted == "any" or h.handedness.lower() == wanted), None)
 
-    def _point(self, hand: Hand, hands: HandFrame) -> np.ndarray:
-        """camera px, x toward the user's right"""
-        point = self._point_of(hand) * (hands.width, hands.height)
+    def _point(self, hand: Hand, hands: HandFrame, gesture: str | None) -> np.ndarray:
+        """camera px, x toward the user's right, on the part of the hand this gesture follows"""
+        g = self.cfg.gestures.get(gesture or "")
+        point = anchor.of(hand, g.point if g else "palm") * (hands.width, hands.height)
         if not self.cfg.camera.frame_mirrored:
             point[0] = hands.width - point[0]
 

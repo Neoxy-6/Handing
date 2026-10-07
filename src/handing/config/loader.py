@@ -35,7 +35,8 @@ def _migrate(cls, raw: dict) -> dict:
         raw = {k: v for k, v in raw.items() if k != "mode"}  # mouse.mode was never used, styles live on gestures
 
     if cls is CursorConfig:
-        raw = {k: v for k, v in raw.items() if k != "joystick_scroll_speed"}  # joystick scrolling was dropped
+        dropped = ("joystick_scroll_speed", "point")  # joystick scrolling was dropped, point moved to each gesture
+        raw = {k: v for k, v in raw.items() if k not in dropped}
 
     return raw
 
@@ -44,6 +45,12 @@ def _fits(value, kind: type) -> bool:
         return isinstance(value, (int, float)) and not isinstance(value, bool)
 
     return isinstance(value, kind)
+
+def _with_point(raw: dict | None, point: str | None) -> dict | None:
+    if not point or not raw or "point" in raw:
+        return raw
+
+    return {**raw, "point": point}
 
 def from_dict(raw: dict) -> Config:
     config = Config()
@@ -55,8 +62,9 @@ def from_dict(raw: dict) -> Config:
         if f.name == "macros":
             config.macros = dict(raw["macros"] or {})
         elif f.name == "gestures":
+            old_point = (raw.get("cursor") or {}).get("point")  # used to be one setting for every gesture
             config.gestures = {
-                str(name): _section(GestureConfig, g, f"gestures.{name}")
+                str(name): _section(GestureConfig, _with_point(g, old_point), f"gestures.{name}")
                 for name, g in (raw["gestures"] or {}).items()
             }
         else:
