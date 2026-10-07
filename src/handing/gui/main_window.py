@@ -89,8 +89,7 @@ class MainWindow(QMainWindow):
             return
 
         center, radius = stick_area(cfg)
-        point_of = anchor.palm_center if cfg.cursor.point == "palm" else anchor.index_tip
-        point = point_of(tick.hand) * (tick.hands.width, tick.hands.height) if tick.hand else None
+        point = anchor.of(tick.hand, g.point) * (tick.hands.width, tick.hands.height) if tick.hand else None
         draw_stick(frame, center, radius, cfg.cursor.joystick_deadzone, point)
 
     def on_output_changed(self, live: bool) -> None:

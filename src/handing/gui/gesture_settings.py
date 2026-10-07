@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 
 from handing.config.keys import make_key
 from handing.config.lint import new_warnings
-from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, STYLES_FOR, Config, GestureConfig
+from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, POINTED, POINTS, STYLES_FOR, Config, GestureConfig
 from handing.config.validate import validate
 from handing.gui.action_edit import ActionEdit
 from handing.gui.confirm import confirm_warnings
@@ -63,6 +63,9 @@ class GestureSettings(QDialog):
         self.none_hint = QLabel(NONE_HINTS["any"])
         self.mode = QComboBox()
         self.style = QComboBox()
+        self.point = QComboBox()
+        self.point.addItems(POINTS)
+        self.point.setToolTip("palm: center of the palm, steady / index: index finger tip, finer but shakier")
         self.mode.addItems([NONE, *MODES])
         if not cfg.safety.lock:
             self.mode.model().item(1 + MODES.index("lock")).setEnabled(False)  # locking is off in settings
@@ -91,12 +94,13 @@ class GestureSettings(QDialog):
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(form_page(("hand", self.hand), ("mode", self.mode), ("style", self.style)))
+        layout.addWidget(form_page(("hand", self.hand), ("mode", self.mode), ("style", self.style), ("point", self.point)))
         layout.addWidget(self.pages)
         layout.addWidget(buttons)
 
         self.mode.currentIndexChanged.connect(self.pages.setCurrentIndex)
         self.mode.currentTextChanged.connect(self._sync_style)
+        self.mode.currentTextChanged.connect(lambda mode: self.point.setEnabled(mode in POINTED))
         self.hand.currentTextChanged.connect(self._load_hand)
         self._load_hand("any")
 
@@ -125,6 +129,8 @@ class GestureSettings(QDialog):
     def _load(self, g: GestureConfig) -> None:
         self.mode.setCurrentText(g.mode)
         self._sync_style(g.mode, g.style)
+        self.point.setCurrentText(g.point)
+        self.point.setEnabled(g.mode in POINTED)
         self.pages.setCurrentIndex(self.mode.currentIndex())
         self.sensitivity.setValue(g.sensitivity)
         self.threshold.setValue(g.threshold)
@@ -141,6 +147,8 @@ class GestureSettings(QDialog):
         g = GestureConfig(mode)
         if mode in STYLES_FOR:
             g.style = self.style.currentText()
+        if mode in POINTED:
+            g.point = self.point.currentText()
         if mode == "scroll":
             g.sensitivity = self.sensitivity.value()
         elif mode == "trigger":

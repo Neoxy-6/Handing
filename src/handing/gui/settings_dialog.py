@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QMessageBox, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import CONTROL_HANDS, POINTS, Config
+from handing.config.schema import CONTROL_HANDS, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
 from handing.gui.confirm import confirm_warnings
@@ -74,7 +74,6 @@ def pages(gesture_names: list[str]) -> list:
         ]),
         ("cursor", "", [
             "GENERAL",
-            ("cursor", "point", "point", "the part of the hand that drives the cursor", choice(*POINTS)),
             ("mouse", "sensitivity", "sensitivity", "1 = moving across the whole frame crosses the whole screen", float_box(0.2, 10, 0.1)),
             ("mouse", "deadzone", "deadzone", "camera px per frame ignored, stops jitter", float_box(0, 5, 0.1)),
             ("cursor", "min_cutoff", "smoothing", "one euro min cutoff, lower is smoother but laggier", float_box(0.05, 5, 0.05)),
