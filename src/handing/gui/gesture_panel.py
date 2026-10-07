@@ -61,17 +61,20 @@ class GesturePanel(QFrame):
 
         buttons = QGridLayout()
         buttons.setSpacing(6)
-        for text, slot, row, col, span, role in [
-            ("edit", self.settings, 0, 0, 2, "primary"),
-            ("add", self.add, 1, 0, 1, ""),
-            ("record", self.record_more, 1, 1, 1, ""),
-            ("rename", self.rename, 2, 0, 1, ""),
-            ("delete", self.delete, 2, 1, 1, ""),
+        self.needs_selection: list[QPushButton] = []
+        for text, slot, row, col, span, role, per_gesture in [
+            ("add", self.add, 0, 0, 2, "primary", False),
+            ("edit", self.settings, 1, 0, 1, "", True),
+            ("record", self.record_more, 1, 1, 1, "", True),
+            ("rename", self.rename, 2, 0, 1, "", True),
+            ("delete", self.delete, 2, 1, 1, "", True),
         ]:
             button = QPushButton(text)
             button.setProperty("role", role)
             button.clicked.connect(slot)
             buttons.addWidget(button, row, col, 1, span)
+            if per_gesture:
+                self.needs_selection.append(button)
 
         title = QLabel("GESTURES")
         title.setProperty("role", "title")
@@ -83,7 +86,15 @@ class GesturePanel(QFrame):
         layout.addLayout(buttons)
 
         self.list.itemDoubleClicked.connect(lambda *_: self.settings())
+        self.list.itemSelectionChanged.connect(self._sync_buttons)
         worker.samples_changed.connect(self.show_counts)
+        self._sync_buttons()
+
+    def _sync_buttons(self) -> None:
+        """per gesture buttons only light up while a gesture is selected"""
+        on = bool(self.list.selectedItems())
+        for button in self.needs_selection:
+            button.setEnabled(on)
 
     def show_counts(self, counts: dict[str, int]) -> None:
         self.names = list(counts)
@@ -96,6 +107,8 @@ class GesturePanel(QFrame):
             item.setToolTip(0, f"{n} samples")
             item.setToolTip(1, item.text(1))
             self.list.addTopLevelItem(item)
+
+        self._sync_buttons()
 
     def _reordered(self, names: list[str]) -> None:
         self.names = names
