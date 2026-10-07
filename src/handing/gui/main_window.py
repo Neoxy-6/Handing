@@ -102,7 +102,8 @@ class MainWindow(QMainWindow):
         set_role(self.output, "danger" if live else "")
 
     def open_settings(self) -> None:
-        dialog = SettingsDialog(self.worker.cfg, self.worker.editor.samples.names, self)
+        samples = self.worker.editor.samples
+        dialog = SettingsDialog(self.worker.cfg, samples.names, self, samples)
         if dialog.exec():
             self.worker.apply_config(dialog.result_config())
 

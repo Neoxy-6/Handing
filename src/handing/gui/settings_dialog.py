@@ -9,6 +9,8 @@ from handing.config.schema import CONTROL_HANDS, POINTS, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
 from handing.gui.confirm import confirm_warnings
+from handing.recognition.samples import SampleSet
+from handing.recognition.similarity import confusable
 
 def int_box(low: int, high: int) -> QSpinBox:
     box = QSpinBox()
@@ -88,6 +90,7 @@ def pages(gesture_names: list[str]) -> list:
         ("gestures", "", [
             ("recognition", "max_distance", "max distance", "farther than this from every sample counts as unknown", float_box(0.5, 5, 0.1)),
             ("recognition", "k", "k", "neighbors that vote", int_box(1, 15)),
+            ("recognition", "align_rotation", "ignore rotation", "turn hands upright before comparing, a tilted hand still matches but gestures that differ only by direction merge", QCheckBox()),
             ("stability", "enter_frames", "enter frames", "frames a gesture must hold before it switches", int_box(1, 30)),
             ("stability", "exit_frames", "exit frames", "frames a gesture may be missing before it ends", int_box(1, 60)),
             ("stability", "min_confidence", "min confidence", "share of neighbor votes needed to switch", float_box(0.2, 1, 0.05)),
@@ -106,11 +109,12 @@ def pages(gesture_names: list[str]) -> list:
 class SettingsDialog(QDialog):
     """edits a copy of the config, validated before it is accepted"""
 
-    def __init__(self, cfg: Config, gesture_names: list[str], parent = None):
+    def __init__(self, cfg: Config, gesture_names: list[str], parent = None, samples: SampleSet | None = None):
         super().__init__(parent)
         self.setWindowTitle("settings")
         self.cfg = cfg
         self.gesture_names = gesture_names
+        self.samples = samples
         self.rows = []
         self.labels = {}
 
@@ -176,6 +180,20 @@ class SettingsDialog(QDialog):
 
         return new
 
+    def _rotation_warnings(self, new: Config) -> list[str]:
+        """turning alignment on can make gestures that differ only by direction look the same"""
+        if self.samples is None or not new.recognition.align_rotation or self.cfg.recognition.align_rotation:
+            return []
+
+        rec = new.recognition
+        before = {name for name, _ in confusable(self.samples, rec.k, rec.max_distance, align = False)}
+
+        return [
+            f"{name} looks like {found.name} once rotation is ignored ({found.ratio:.0%} of its samples)"
+            for name, found in confusable(self.samples, rec.k, rec.max_distance, align = True)
+            if name not in before
+        ]
+
     def accept(self) -> None:
         new = self.result_config()
         try:
@@ -184,5 +202,6 @@ class SettingsDialog(QDialog):
             QMessageBox.warning(self, "settings", str(e))
             return
 
-        if confirm_warnings(self, "settings", new_warnings(self.cfg, new, self.gesture_names)):
+        warnings = new_warnings(self.cfg, new, self.gesture_names) + self._rotation_warnings(new)
+        if confirm_warnings(self, "settings", warnings):
             super().accept()
