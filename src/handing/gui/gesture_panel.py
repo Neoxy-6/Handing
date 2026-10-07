@@ -1,6 +1,6 @@
 import copy
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QModelIndex, Qt, Signal
 from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
 from handing.config.keys import split_key, variants
@@ -38,6 +38,14 @@ class GestureList(QTreeWidget):
     def dropEvent(self, event) -> None:
         super().dropEvent(event)
         self.reordered.emit(self.names())
+
+    def mousePressEvent(self, event) -> None:
+        """a click on empty space clears the selection"""
+        if self.itemAt(event.position().toPoint()) is None:
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+
+        super().mousePressEvent(event)
 
 class GesturePanel(QFrame):
     def __init__(self, worker: Worker):
