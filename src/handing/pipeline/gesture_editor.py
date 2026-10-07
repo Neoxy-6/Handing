@@ -36,6 +36,10 @@ class GestureEditor:
         self.samples.add(name, poses)
         self.samples.save(self.samples_path)
 
+    def reorder(self, names: list[str]) -> None:
+        self.samples.reorder(names)
+        self.samples.save(self.samples_path)
+
     def delete(self, name: str) -> None:
         self.samples.delete(name)
         for key in variants(self.cfg.gestures, name):

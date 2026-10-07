@@ -37,6 +37,11 @@ class SampleSet:
     def delete(self, name: str) -> None:
         self._poses.pop(name, None)
 
+    def reorder(self, names: list[str]) -> None:
+        """only changes the listing order, unknown names are ignored, missing ones keep their place at the end"""
+        order = [n for n in names if n in self._poses] + [n for n in self._poses if n not in names]
+        self._poses = {n: self._poses[n] for n in order}
+
     def rename(self, old: str, new: str) -> None:
         if new in self._poses:
             raise ValueError(f"gesture '{new}' already exists")

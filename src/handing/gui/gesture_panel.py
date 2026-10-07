@@ -1,6 +1,6 @@
 import copy
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
 from handing.config.keys import split_key, variants
@@ -22,6 +22,23 @@ def mode_summary(gestures: dict, name: str) -> str:
 
     return "  ·  ".join(parts) or "-"
 
+class GestureList(QTreeWidget):
+    """flat list the user can reorder by dragging"""
+
+    reordered = Signal(list)
+
+    def __init__(self):
+        super().__init__()
+        self.setDragDropMode(QTreeWidget.DragDropMode.InternalMove)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
+
+    def names(self) -> list[str]:
+        return [self.topLevelItem(i).text(0) for i in range(self.topLevelItemCount())]
+
+    def dropEvent(self, event) -> None:
+        super().dropEvent(event)
+        self.reordered.emit(self.names())
+
 class GesturePanel(QFrame):
     def __init__(self, worker: Worker):
         super().__init__()
@@ -30,7 +47,8 @@ class GesturePanel(QFrame):
 
         self.setObjectName("card")
 
-        self.list = QTreeWidget()
+        self.list = GestureList()
+        self.list.reordered.connect(self._reordered)
         self.list.setHeaderLabels(["gesture", "mode"])
         self.list.setRootIsDecorated(False)
         self.list.setUniformRowHeights(True)
@@ -74,9 +92,14 @@ class GesturePanel(QFrame):
 
         for name, n in counts.items():
             item = QTreeWidgetItem([name, mode_summary(gestures, name)])
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDropEnabled)  # dropping onto a row would nest it
             item.setToolTip(0, f"{n} samples")
             item.setToolTip(1, item.text(1))
             self.list.addTopLevelItem(item)
+
+    def _reordered(self, names: list[str]) -> None:
+        self.names = names
+        self.worker.reorder(names)
 
     def selected(self) -> str | None:
         item = self.list.currentItem()

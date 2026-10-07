@@ -49,6 +49,9 @@ class Worker(QThread):
         """called after the user reviewed a finished recording"""
         self._jobs.put(lambda runner: self._add(runner, name, poses))
 
+    def reorder(self, names: list[str]) -> None:
+        self._jobs.put(lambda runner: self.editor.reorder(names))
+
     def delete(self, name: str) -> None:
         self._jobs.put(lambda runner: self._edit(runner, self.editor.delete, name))
 
