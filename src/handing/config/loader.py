@@ -28,8 +28,8 @@ def _migrate(cls, raw: dict) -> dict:
     if cls is GestureConfig and raw.get("mode") == "joystick":
         raw = {**raw, "mode": "mouse", "style": "joystick"}  # joystick used to be its own mode
 
-    if cls is GestureConfig and raw.get("mode") == "scroll":
-        raw = {k: v for k, v in raw.items() if k != "style"}  # scroll has no styles any more
+    if cls is GestureConfig and raw.get("mode") in ("scroll", "drag"):
+        raw = {k: v for k, v in raw.items() if k != "style"}  # these modes have no styles any more
 
     if cls is CursorConfig:
         raw = {k: v for k, v in raw.items() if k != "joystick_scroll_speed"}  # joystick scrolling was dropped

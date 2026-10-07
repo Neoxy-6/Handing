@@ -50,7 +50,7 @@ def build_modes(cfg: Config, mouse: Mouse, runner: ActionRunner, screen_width: i
         if g.mode == "mouse":
             modes[name] = cursor(g.style)
         elif g.mode == "drag":
-            modes[name] = DragMode(cursor(g.style), mouse)
+            modes[name] = DragMode(cursor("relative"), mouse)
         elif g.mode == "scroll":
             modes[name] = ScrollMode(mouse, g.sensitivity, smoother())
         elif g.mode == "trigger":

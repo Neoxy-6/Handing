@@ -20,7 +20,6 @@ NONE_HINTS = {
 }
 STYLE_TIPS = {
     "mouse": "relative: follows hand movement / joystick: distance from the stick center sets the speed",
-    "drag": "relative: follows hand movement / joystick: distance from the stick center sets the speed",
 }
 HINTS = {
     "mouse": "moves the cursor\nspeed and stick settings are in settings > cursor",

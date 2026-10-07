@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 MODES = ("mouse", "drag", "scroll", "lock", "trigger", "action")
 STYLES_FOR = {  # modes that take a style, first one is the default
     "mouse": ("relative", "joystick"),
-    "drag": ("relative", "joystick"),
 }
 STYLED = tuple(STYLES_FOR)
 MOUSE_MODES = ("relative", "absolute", "joystick")
@@ -79,7 +78,7 @@ class UiConfig:
 @dataclass
 class GestureConfig:
     mode: str
-    style: str = "relative"  # mouse / drag: relative or joystick, see STYLES_FOR
+    style: str = "relative"  # mouse: relative or joystick, see STYLES_FOR
     sensitivity: float = 1.0  # scroll
     threshold: float = 0.15  # trigger, fraction of frame width
     left: str | None = None
