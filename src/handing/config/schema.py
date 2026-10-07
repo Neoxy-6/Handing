@@ -17,7 +17,7 @@ class CameraConfig:
     width: int = 640
     idle_fps: int = 8  # frames per second while no hand is seen, 0 = never slow down
     mirrored: bool = False  # the driver already flips the frame like a mirror
-    flip: bool = False  # flip the frame ourselves, so the preview reads like a mirror
+    flip: bool = True  # flip the frame ourselves, so the preview reads like a mirror
 
     @property
     def frame_mirrored(self) -> bool:
@@ -45,18 +45,18 @@ class StabilityConfig:
 class CursorConfig:
     point: str = "palm"
     min_cutoff: float = 0.5
-    beta: float = 0.02
-    joystick_deadzone: float = 0.1  # share of the stick radius that does nothing
-    joystick_speed: float = 1500.0  # screen px per second at full push
-    joystick_curve: float = 2.0  # 1 = linear, higher = finer near the center
+    beta: float = 0.015
+    joystick_deadzone: float = 0.15  # share of the stick radius that does nothing
+    joystick_speed: float = 600.0  # screen px per second at full push
+    joystick_curve: float = 1.5  # 1 = linear, higher = finer near the center
     joystick_center_x: float = 0.5  # as seen in the preview, 0 = left edge
     joystick_center_y: float = 0.5  # 0 = top edge
-    joystick_radius: float = 0.5  # share of the frame height for full push
+    joystick_radius: float = 0.4  # share of the frame height for full push
 
 @dataclass
 class SafetyConfig:
     estop_hotkey: str = "<ctrl>+<alt>+q"
-    lock: bool = True  # start locked, need the unlock gesture, lock again after the hand leaves
+    lock: bool = False  # start locked, need the unlock gesture, lock again after the hand leaves
     lock_after: float = 5.0  # seconds without a hand before locking again
     unlock_gesture: str = "paper"
     unlock_frames: int = 15
@@ -65,7 +65,7 @@ class SafetyConfig:
 class MouseConfig:
     mode: str = "relative"
     sensitivity: float = 1.5
-    deadzone: float = 0.5  # camera px per frame, after smoothing
+    deadzone: float = 0.2  # camera px per frame, after smoothing
 
 @dataclass
 class KeyboardConfig:
@@ -90,10 +90,9 @@ class GestureConfig:
 
 def default_gestures() -> dict[str, GestureConfig]:
     return {
-        "point": GestureConfig("mouse"),
-        "fist": GestureConfig("lock"),
-        "peace": GestureConfig("scroll"),
-        "paper": GestureConfig("trigger", left = "ctrl+win+left", right = "ctrl+win+right", up = "pgup", down = "pgdn"),
+        "peace": GestureConfig("drag"),
+        "point": GestureConfig("mouse", style = "joystick"),
+        "fist": GestureConfig("scroll"),
     }
 
 @dataclass
