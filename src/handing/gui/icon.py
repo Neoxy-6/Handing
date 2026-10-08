@@ -3,14 +3,14 @@ from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 
 # (x, y, w, h) in px, measured from the original drawing assets/icon/icon.png
 HAND = [
-    (0, 43, 10, 22),  # thumb
-    (14, 5, 9, 37),
-    (25, 0, 9, 42),
-    (36, 0, 9, 42),
-    (47, 12, 9, 30),
-    (14, 45, 42, 31),  # palm
+    (0, 34, 10, 29),  # thumb
+    (12, 5, 9, 37),
+    (23, 0, 9, 42),
+    (34, 0, 9, 42),
+    (45, 12, 9, 30),
+    (12, 44, 42, 31),  # palm
 ]
-HAND_SIZE = (56, 76)
+HAND_SIZE = (54, 75)
 APP_COLOR = "#00a2e8"
 MARGIN = 0.08  # share of the icon left empty on each side
 
