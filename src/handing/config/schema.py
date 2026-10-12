@@ -106,7 +106,7 @@ def default_bindings() -> dict[str, str]:
 @dataclass
 class GamepadConfig:
     sticks: bool = True  # while a hand is in view its palm drives the stick on its side
-    left_center_x: float = 0.25  # stick centers as seen in the preview, 0 = left edge
+    left_center_x: float = 0.25  # stick centers, 0 = the user's left edge whether or not the frame is flipped
     right_center_x: float = 0.75
     center_y: float = 0.5  # 0 = top edge
     radius: float = 0.2  # share of the frame height for full push
