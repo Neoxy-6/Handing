@@ -8,17 +8,12 @@ from handing.control.fsm import StateMachine
 from handing.control.modes.base import Mode
 from handing.control.modes.build import build_modes
 from handing.control.states import State, Status
-from handing.core import paths
-from handing.core.clock import now_ms
 from handing.core.types import Hand, HandFrame
-from handing.detection.landmarker import Landmarker
 from handing.features import anchor
 from handing.filtering.hysteresis import Hysteresis
-from handing.input import preprocess
-from handing.input.camera import Camera
-from handing.input.throttle import Throttle
 from handing.output.macro import ActionRunner, parse_macro
 from handing.output.screen import virtual_screen
+from handing.pipeline.capture import Capture
 from handing.recognition.classifier import Classifier, Prediction
 from handing.recognition.samples import SampleSet
 
@@ -31,14 +26,12 @@ class Tick:
     status: Status
 
 class Runner:
-    """camera -> detection -> recognition -> filtering -> state machine -> modes, one frame per step()"""
+    """capture -> recognition -> filtering -> state machine -> modes, one frame per step()"""
 
     def __init__(self, cfg: Config, keyboard, mouse, samples: SampleSet):
         self.cfg = cfg
-        self.camera = Camera(cfg.camera.index, mirror = cfg.camera.flip)
-        self.throttle = Throttle(cfg.camera.idle_fps)
         num_hands = cfg.detection.hands if cfg.detection.control_hand == "any" else 2
-        self.landmarker = Landmarker(paths.model_path(), num_hands, cfg.detection.min_confidence, cfg.camera.frame_mirrored)
+        self.capture = Capture(cfg, num_hands)
 
         rec = cfg.recognition
         self.classifier = Classifier(samples, rec.k, rec.max_distance, rec.align_rotation)
@@ -59,14 +52,12 @@ class Runner:
 
     def step(self) -> Tick | None:
         """None when the camera gave no frame"""
-        self.throttle.wait()
-        frame = self.camera.read()
-        if frame is None:
+        read = self.capture.read()
+        if read is None:
             return None
 
-        t = now_ms()
-        frame = preprocess.fit_width(frame, self.cfg.camera.width)
-        hands = self.landmarker.detect(preprocess.to_rgb(frame), t)
+        frame, hands = read
+        t = hands.timestamp_ms
 
         hand = self.pick(hands)
         if hand is None:
@@ -74,7 +65,7 @@ class Runner:
             self._switch(None, None, t)
             return Tick(frame, hands, None, None, self.fsm.update(None, t))
 
-        self.throttle.saw_hand()
+        self.capture.saw_hand()
         pred = self.classifier.predict(hand, hands.width, hands.height)
         stable = self.hyst.update(pred.name, pred.confidence)
         status = self.fsm.update(resolve(self.cfg.gestures, stable, hand.handedness), t)
@@ -114,12 +105,11 @@ class Runner:
         self._current = mode
 
     def open(self) -> None:
-        self.camera.open()
+        self.capture.open()
 
     def close(self) -> None:
         self._switch(None, None, 0)
-        self.camera.close()
-        self.landmarker.close()
+        self.capture.close()
 
     def __enter__(self) -> "Runner":
         self.open()
