@@ -1,7 +1,7 @@
 from pynput.keyboard import HotKey
 
 from handing.config.keys import SIDES, split_key
-from handing.config.schema import CONTROL_HANDS, DIRECTIONS, MODES, POINTS, STYLES_FOR, Config
+from handing.config.schema import APP_MODES, CONTROL_HANDS, DIRECTIONS, MODES, PAD_BUTTONS, PAD_TRIGGERS, POINTS, STYLES_FOR, Config
 from handing.output.macro import check_action, parse_macro
 
 def _one_of(value, options, where: str) -> None:
@@ -12,8 +12,13 @@ def _positive(value, where: str) -> None:
     if value <= 0:
         raise ValueError(f"{where} must be > 0, got {value!r}")
 
+def _share(value, where: str) -> None:
+    if not 0 <= value <= 1:
+        raise ValueError(f"{where} must be in [0, 1], got {value!r}")
+
 def validate(config: Config) -> None:
     """raise ValueError with the config path of the first problem"""
+    _one_of(config.app.mode, APP_MODES, "app.mode")
     _one_of(config.detection.hands, (1, 2), "detection.hands")
     _one_of(config.detection.control_hand, CONTROL_HANDS, "detection.control_hand")
 
@@ -73,3 +78,24 @@ def validate(config: Config) -> None:
                 check_action(action, macros)
             except ValueError as e:
                 raise ValueError(f"{where}: {e}") from None
+
+    _gamepad(config)
+
+def _gamepad(config: Config) -> None:
+    pad = config.gamepad
+    for name in ("left_center_x", "right_center_x", "center_y"):
+        _share(getattr(pad, name), f"gamepad.{name}")
+    _positive(pad.radius, "gamepad.radius")
+    _positive(pad.curve, "gamepad.curve")
+    if not 0 <= pad.deadzone < 1:
+        raise ValueError(f"gamepad.deadzone must be in [0, 1), got {pad.deadzone!r}")
+
+    if not isinstance(pad.bindings, dict):
+        raise ValueError("gamepad.bindings must map gestures to buttons, like fist@right: RT")
+
+    for key, button in pad.bindings.items():
+        where = f"gamepad.bindings.{key}"
+        if "@" in str(key) and split_key(str(key))[1] not in SIDES:
+            raise ValueError(f"{where}: the part after @ must be left or right")
+
+        _one_of(button, PAD_BUTTONS + PAD_TRIGGERS, where)

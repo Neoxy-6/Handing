@@ -19,6 +19,11 @@ def lint(cfg: Config, gesture_names: list[str]) -> list[str]:
         if unused:
             out.append(f"control hand is {control}, so {', '.join(unused)} never run")
 
+    if cfg.app.mode == "gamepad":
+        missing = sorted({split_key(key)[0] for key in cfg.gamepad.bindings} - set(gesture_names))
+        if missing:
+            out.append(f"gamepad bindings use {', '.join(missing)}, which have no samples")
+
     return out
 
 def _lock_warnings(cfg: Config, gesture_names: list[str]) -> list[str]:

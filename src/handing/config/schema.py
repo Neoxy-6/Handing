@@ -9,6 +9,13 @@ POINTS = ("palm", "index")
 POINTED = ("mouse", "drag", "scroll", "trigger")  # modes that follow a point on the hand
 CONTROL_HANDS = ("any", "left", "right")
 DIRECTIONS = ("left", "right", "up", "down")
+APP_MODES = ("standard", "gamepad")
+PAD_BUTTONS = ("A", "B", "X", "Y", "LB", "RB", "BACK", "START", "LS", "RS", "UP", "DOWN", "LEFT", "RIGHT")
+PAD_TRIGGERS = ("LT", "RT")
+
+@dataclass
+class AppConfig:
+    mode: str = "standard"  # standard: mouse and keyboard, gamepad: a virtual xbox controller
 
 @dataclass
 class CameraConfig:
@@ -87,6 +94,26 @@ class GestureConfig:
     action: str | None = None  # action mode
     repeat: bool = False  # action mode, re-run while held
 
+def default_bindings() -> dict[str, str]:
+    return {
+        "fist@left": "LT",
+        "peace@left": "LB",
+        "fist@right": "RT",
+        "point@right": "A",
+        "peace@right": "B",
+    }
+
+@dataclass
+class GamepadConfig:
+    sticks: bool = True  # while a hand is in view its palm drives the stick on its side
+    left_center_x: float = 0.25  # stick centers as seen in the preview, 0 = left edge
+    right_center_x: float = 0.75
+    center_y: float = 0.5  # 0 = top edge
+    radius: float = 0.2  # share of the frame height for full push
+    deadzone: float = 0.15  # share of the radius
+    curve: float = 1.0  # 1 = linear, higher = finer near the center
+    bindings: dict[str, str] = field(default_factory = default_bindings)  # gesture key -> button or trigger, held while the gesture is
+
 def default_gestures() -> dict[str, GestureConfig]:
     return {
         "point": GestureConfig("mouse", style = "joystick", point = "index"),
@@ -96,6 +123,7 @@ def default_gestures() -> dict[str, GestureConfig]:
 
 @dataclass
 class Config:
+    app: AppConfig = field(default_factory = AppConfig)
     camera: CameraConfig = field(default_factory = CameraConfig)
     detection: DetectionConfig = field(default_factory = DetectionConfig)
     recognition: RecognitionConfig = field(default_factory = RecognitionConfig)
@@ -107,3 +135,4 @@ class Config:
     ui: UiConfig = field(default_factory = UiConfig)
     macros: dict[str, list] = field(default_factory = dict)  # raw steps, see output/macro.py
     gestures: dict[str, GestureConfig] = field(default_factory = default_gestures)
+    gamepad: GamepadConfig = field(default_factory = GamepadConfig)
