@@ -89,11 +89,8 @@ class Runner:
     def _point(self, hand: Hand, hands: HandFrame, gesture: str | None) -> np.ndarray:
         """camera px, x toward the user's right, on the part of the hand this gesture follows"""
         g = self.cfg.gestures.get(gesture or "")
-        point = anchor.of(hand, g.point if g else "palm") * (hands.width, hands.height)
-        if not self.cfg.camera.frame_mirrored:
-            point[0] = hands.width - point[0]
 
-        return point
+        return anchor.control_point(hand, hands.width, hands.height, g.point if g else "palm", self.cfg.camera.frame_mirrored)
 
     def _switch(self, mode: Mode | None, point: np.ndarray | None, t: int) -> None:
         if self._current:

@@ -15,3 +15,11 @@ def index_tip(hand: Hand) -> np.ndarray:
 def of(hand: Hand, point: str) -> np.ndarray:
     """'palm' or 'index', see config POINTS"""
     return index_tip(hand) if point == "index" else palm_center(hand)
+
+def control_point(hand: Hand, width: int, height: int, point: str, frame_mirrored: bool) -> np.ndarray:
+    """camera px with x toward the user's right, a raw frame is flipped"""
+    p = of(hand, point) * (width, height)
+    if not frame_mirrored:
+        p[0] = width - p[0]
+
+    return p
