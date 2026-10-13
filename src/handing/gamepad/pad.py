@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from handing.gamepad.mapping import PadState
 from handing.output.estop import EmergencyStop
 
@@ -13,13 +15,18 @@ class XboxPad:
 
     def __init__(self, estop: EmergencyStop | None = None):
         try:
-            import vgamepad as vg  # only gamepad mode needs it, and it needs the vigembus driver
+            import vgamepad as vg  # only gamepad mode needs it
         except Exception as e:
-            raise RuntimeError(f"gamepad mode needs vgamepad and the ViGEmBus driver: {e}") from None
+            raise RuntimeError(f"gamepad mode needs the vgamepad package: {e}") from None
+
+        try:
+            self._pad = vg.VX360Gamepad()
+        except Exception as e:
+            setup = Path(vg.__file__).parent / "win" / "vigem" / "install" / "x64" / "ViGEmBusSetup_x64.msi"
+            raise RuntimeError(f"cannot create the virtual controller ({e}).\n\nInstall the ViGEmBus driver, then restart Handing:\n{setup}") from None
 
         self._vg = vg
         self._estop = estop
-        self._pad = vg.VX360Gamepad()
         self.state = PadState()
 
     @property

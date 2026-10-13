@@ -17,6 +17,8 @@ $version = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Mat
     --include-qt-plugins=sensible,imageformats,iconengines `
     --include-package=handing `
     --include-package-data=mediapipe `
+    --include-package=vgamepad `
+    --include-package-data=vgamepad `
     --include-data-dir=assets=assets `
     --include-data-dir=src/handing/gui/icons=handing/gui/icons `
     --nofollow-import-to=sklearn,scipy,pytest,tkinter,IPython `
@@ -41,7 +43,12 @@ $core = "mediapipe\tasks\c\libmediapipe.dll"
 New-Item -ItemType Directory -Force (Split-Path "dist\Handing\$core") | Out-Null
 Copy-Item ".venv\Lib\site-packages\$core" "dist\Handing\$core"
 
-# license texts of python and every runtime package (the pyproject dependencies and what they pull in)
+# vgamepad loads its client dll with ctypes the same way, gamepad mode needs it
+$vigem = "vgamepad\win\vigem\client\x64\ViGEmClient.dll"
+New-Item -ItemType Directory -Force (Split-Path "dist\Handing\$vigem") | Out-Null
+Copy-Item ".venv\Lib\site-packages\$vigem" "dist\Handing\$vigem"
+
+# license texts of python and every runtime package (the pyproject dependencies, the gamepad extra and what they pull in)
 # qt wheels only ship the commercial license text, they are used under lgpl-3.0 here, so they get pynput's copy of it
 $licenses = @'
 import importlib.metadata as md, re, shutil, sys, tomllib
@@ -50,7 +57,8 @@ from packaging.requirements import Requirement
 
 out = Path(sys.argv[1])
 shutil.rmtree(out, ignore_errors = True)
-todo = tomllib.load(open("pyproject.toml", "rb"))["project"]["dependencies"]
+project = tomllib.load(open("pyproject.toml", "rb"))["project"]
+todo = project["dependencies"] + project["optional-dependencies"]["gamepad"]
 seen = {}
 
 while todo:

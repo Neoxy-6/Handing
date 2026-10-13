@@ -13,6 +13,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "nuitka", "psutil", "scikit-learn"]
+gamepad = ["vgamepad"]  # pip install pops up the ViGEmBus driver installer
 
 [project.scripts]
 handing = "handing.__main__:main"
