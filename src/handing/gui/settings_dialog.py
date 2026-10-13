@@ -2,10 +2,10 @@ import copy
 
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout,
-    QLabel, QLineEdit, QMessageBox, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
+    QLabel, QLineEdit, QMessageBox, QSizePolicy, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import APP_MODES, CONTROL_HANDS, Config
+from handing.config.schema import CONTROL_HANDS, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
 from handing.gui.bindings_edit import BindingsEdit
@@ -73,7 +73,16 @@ def pages(gesture_names: list[str]) -> list:
             ("detection", "control_hand", "control hand", "only this hand controls, the other is ignored", choice(*CONTROL_HANDS)),
             ("detection", "min_confidence", "confidence", "minimum detection confidence", float_box(0.1, 0.95, 0.05)),
         ]),
-        ("cursor", "", [
+        ("gestures", "", [
+            ("recognition", "max_distance", "max distance", "farther than this from every sample counts as unknown", float_box(0.5, 5, 0.1)),
+            ("recognition", "k", "k", "neighbors that vote", int_box(1, 15)),
+            ("recognition", "align_rotation", "ignore rotation", "turn hands upright before comparing, a tilted hand still matches but gestures that differ only by direction merge", QCheckBox()),
+            ("stability", "enter_frames", "enter frames", "frames a gesture must hold before it switches", int_box(1, 30)),
+            ("stability", "exit_frames", "exit frames", "frames a gesture may be missing before it ends", int_box(1, 60)),
+            ("stability", "min_confidence", "min confidence", "share of neighbor votes needed to switch", float_box(0.2, 1, 0.05)),
+            ("keyboard", "repeat_ms", "repeat ms", "interval of repeated actions while a gesture is held", int_box(50, 3000)),
+        ]),
+        ("standard", "", [
             "GENERAL",
             ("mouse", "sensitivity", "sensitivity", "1 = moving across the whole frame crosses the whole screen", float_box(0.2, 10, 0.1)),
             ("mouse", "deadzone", "deadzone", "camera px per frame ignored, stops jitter", float_box(0, 5, 0.1)),
@@ -87,18 +96,7 @@ def pages(gesture_names: list[str]) -> list:
             ("cursor", "joystick_center_y", "center y", "stick center, 0 = top edge, 1 = bottom edge", float_box(0, 1, 0.05)),
             ("cursor", "joystick_radius", "radius", "full push distance, share of the frame height", float_box(0.1, 1, 0.05)),
         ]),
-        ("gestures", "", [
-            ("recognition", "max_distance", "max distance", "farther than this from every sample counts as unknown", float_box(0.5, 5, 0.1)),
-            ("recognition", "k", "k", "neighbors that vote", int_box(1, 15)),
-            ("recognition", "align_rotation", "ignore rotation", "turn hands upright before comparing, a tilted hand still matches but gestures that differ only by direction merge", QCheckBox()),
-            ("stability", "enter_frames", "enter frames", "frames a gesture must hold before it switches", int_box(1, 30)),
-            ("stability", "exit_frames", "exit frames", "frames a gesture may be missing before it ends", int_box(1, 60)),
-            ("stability", "min_confidence", "min confidence", "share of neighbor votes needed to switch", float_box(0.2, 1, 0.05)),
-            ("keyboard", "repeat_ms", "repeat ms", "interval of repeated actions while a gesture is held", int_box(50, 3000)),
-        ]),
-        ("gamepad", "changing the mode restarts the camera", [
-            "MODE",
-            ("app", "mode", "mode", "standard: mouse and keyboard, gamepad: both hands drive a virtual xbox controller (needs the ViGEmBus driver)", choice(*APP_MODES)),
+        ("gamepad", "", [
             "STICKS",
             ("gamepad", "sticks", "sticks", "while a hand is in view its palm drives the stick on its side", QCheckBox()),
             [
@@ -160,6 +158,9 @@ class SettingsDialog(QDialog):
                 form.addRow(self.bindings)
             if note:
                 form.addRow(QLabel(note))
+            filler = QWidget()
+            filler.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)  # short tabs keep their rows packed at the top
+            form.addRow(filler)
             tabs.addTab(page, title)
 
         self.setMinimumWidth(520)  # every tab title fits without scroll arrows
@@ -207,6 +208,7 @@ class SettingsDialog(QDialog):
 
         holder = QWidget()
         holder.setLayout(line)
+        holder.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)  # a short tab must not stretch it
         form.addRow(first[2], holder)
         self._label(first[4], form.labelForField(holder))
 

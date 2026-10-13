@@ -1,3 +1,4 @@
+import copy
 import queue
 from dataclasses import fields
 
@@ -18,6 +19,7 @@ class Worker(QThread):
 
     tick = Signal(object)  # pipeline.runner.Tick or gamepad.runner.GamepadTick
     output_changed = Signal(bool)  # True when output is live
+    mode_changed = Signal(str)  # app.mode, as soon as a switch is asked for
     samples_changed = Signal(object)  # dict gesture name -> sample count
     record_progress = Signal(int)
     record_finished = Signal(str, object, object)  # name, poses, recognition.similarity.Similar | None
@@ -38,6 +40,16 @@ class Worker(QThread):
 
     def set_output(self, live: bool) -> None:
         self.estop.set_stopped(not live)
+
+    def set_mode(self, mode: str) -> None:
+        """output goes off first so nothing moves the moment the other pipeline starts"""
+        if mode == self.cfg.app.mode:
+            return
+
+        self.set_output(False)
+        self.cfg.app.mode = mode  # right away, a settings dialog opened before the restart must not switch it back
+        self.apply_config(copy.deepcopy(self.cfg))
+        self.mode_changed.emit(mode)
 
     def record(self, name: str, count: int) -> None:
         self._jobs.put(lambda runner: self._start_record(name, count))

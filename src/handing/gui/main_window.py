@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPu
 
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
+from handing.gui.mode_switch import ModeSwitch
 from handing.control.modes.build import control_center, stick_area
 from handing.config.schema import STYLED
 from handing.control.states import State
@@ -31,6 +32,8 @@ class MainWindow(QMainWindow):
         self.worker = worker
         self.quitting = False  # set before QApplication.quit so close really closes
         self.view = FrameView()
+        self.mode = ModeSwitch(worker.cfg.app.mode)
+        self.mode.picked.connect(worker.set_mode)
         self.status = StatusCard()
         self.output = QPushButton()
         self.output.setCheckable(True)
@@ -49,6 +52,7 @@ class MainWindow(QMainWindow):
 
         side = QVBoxLayout()
         side.setSpacing(10)
+        side.addWidget(self.mode)
         side.addWidget(self.status)
         side.addWidget(GesturePanel(worker), 1)
         side.addWidget(hint)
@@ -70,6 +74,7 @@ class MainWindow(QMainWindow):
 
         self.output.toggled.connect(worker.set_output)
         worker.output_changed.connect(self.on_output_changed)
+        worker.mode_changed.connect(self.mode.show_mode)
         worker.tick.connect(self.on_tick)
         worker.failed.connect(self.on_failed)
         self.on_output_changed(False)

@@ -1,6 +1,7 @@
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QAction, QActionGroup, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
+from handing.config.schema import APP_MODES
 from handing.control.states import State
 from handing.gui.icon import state_icon
 from handing.gui.style import DANGER, STATE_COLORS
@@ -27,6 +28,16 @@ class Tray(QSystemTrayIcon):
         self.output = QAction("output", menu, checkable = True)
         self.output.toggled.connect(worker.set_output)
         menu.addAction(self.output)
+        modes = menu.addMenu("mode")
+        group = QActionGroup(modes)
+        self.modes = {}
+        for name in APP_MODES:
+            action = QAction(name, modes, checkable = True, checked = name == worker.cfg.app.mode)
+            action.triggered.connect(lambda _, n = name: worker.set_mode(n))
+            group.addAction(action)
+            modes.addAction(action)
+            self.modes[name] = action
+        worker.mode_changed.connect(lambda mode: self.modes[mode].setChecked(True))
         menu.addSeparator()
         menu.addAction("quit", self.quit)
         self.setContextMenu(menu)

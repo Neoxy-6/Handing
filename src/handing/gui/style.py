@@ -19,7 +19,7 @@ STATE_COLORS = {
     State.ACTIVE: "#22c55e",
 }
 
-# buttons pick a look with setProperty("role", "primary" | "danger")
+# buttons pick a look with setProperty("role", "primary" | "danger" | "segment")
 SHEET = f"""
 QWidget {{ background: {BG}; color: {TEXT}; font-size: 13px; }}
 QLabel {{ background: transparent; }}
@@ -37,6 +37,10 @@ QPushButton[role="primary"] {{ background: {ACCENT}; border-color: {ACCENT}; col
 QPushButton[role="primary"]:hover {{ background: #5592f7; }}
 QPushButton[role="danger"] {{ background: {DANGER}; border-color: {DANGER}; color: white; font-weight: 600; }}
 QPushButton:disabled {{ background: #232327; color: #5c5c64; border-color: #2c2c31; }}
+QFrame#segments {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 8px; }}
+QPushButton[role="segment"] {{ background: transparent; border: none; border-radius: 6px; color: {MUTED}; padding: 6px 12px; }}
+QPushButton[role="segment"]:hover {{ background: #2a2a30; color: {TEXT}; }}
+QPushButton[role="segment"]:checked {{ background: {ACCENT}; color: white; font-weight: 600; }}
 
 QTreeWidget {{ background: transparent; border: none; outline: none; show-decoration-selected: 1; }}
 QTreeWidget::item {{ padding: 6px 2px; border: none; }}
