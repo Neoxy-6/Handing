@@ -16,7 +16,7 @@ from handing.recognition.similarity import find_similar
 class Worker(QThread):
     """runs the pipeline off the ui thread, output starts disabled; gesture edits are queued and applied here"""
 
-    tick = Signal(object)  # pipeline.runner.Tick
+    tick = Signal(object)  # pipeline.runner.Tick or gamepad.runner.GamepadTick
     output_changed = Signal(bool)  # True when output is live
     samples_changed = Signal(object)  # dict gesture name -> sample count
     record_progress = Signal(int)
@@ -72,10 +72,20 @@ class Worker(QThread):
             with self.estop:
                 while not self.isInterruptionRequested():
                     self._restart = False
-                    with Runner(self.cfg, keyboard, mouse, self.editor.samples) as runner:
+                    with self._runner(keyboard, mouse) as runner:
                         self._loop(runner)
         except Exception as e:
             self.failed.emit(str(e))
+
+    def _runner(self, keyboard, mouse):
+        """app.mode picks the pipeline, a restart picks again"""
+        if self.cfg.app.mode == "gamepad":
+            from handing.gamepad.pad import XboxPad
+            from handing.gamepad.runner import GamepadRunner
+
+            return GamepadRunner(self.cfg, XboxPad(self.estop), self.editor.samples)
+
+        return Runner(self.cfg, keyboard, mouse, self.editor.samples)
 
     def _loop(self, runner: Runner) -> None:
         self.samples_changed.emit(self.editor.counts())

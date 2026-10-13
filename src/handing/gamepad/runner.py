@@ -3,7 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from handing.config.schema import Config
-from handing.core.types import HandFrame
+from handing.control.states import State, Status
+from handing.core.types import Hand, HandFrame
 from handing.gamepad.mapping import Mapper, PadState
 from handing.pipeline.capture import Capture
 from handing.pipeline.dual import DualTracker, Side
@@ -16,6 +17,22 @@ class GamepadTick:
     hands: HandFrame
     sides: dict[str, Side]
     pad: PadState  # what was sent, before the emergency stop
+
+    @property
+    def hand(self) -> Hand | None:
+        """first hand in view, recording uses it"""
+        return next((s.hand for s in self.sides.values() if s.hand), None)
+
+    @property
+    def status(self) -> Status:
+        """standby without hands, active while a button is held, so tray and overlay read it like the standard one"""
+        if self.hand is None:
+            return Status(State.STANDBY)
+
+        if self.pad.pressed:
+            return Status(State.ACTIVE, " ".join(sorted(self.pad.pressed)))
+
+        return Status(State.IDLE)
 
 class GamepadRunner:
     """capture -> both hands -> mapping -> pad, one frame per step()"""

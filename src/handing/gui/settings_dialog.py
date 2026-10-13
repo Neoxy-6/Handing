@@ -1,13 +1,14 @@
 import copy
 
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout,
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QMessageBox, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import CONTROL_HANDS, Config
+from handing.config.schema import APP_MODES, CONTROL_HANDS, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
+from handing.gui.bindings_edit import BindingsEdit
 from handing.gui.confirm import confirm_warnings
 from handing.recognition.samples import SampleSet
 from handing.recognition.similarity import confusable
@@ -57,12 +58,12 @@ def group_title(text: str, first: bool) -> QLabel:
     title = QLabel(text)
     title.setProperty("role", "title")
     if not first:
-        title.setContentsMargins(0, 10, 0, 0)
+        title.setContentsMargins(0, 14, 0, 2)
 
     return title
 
 def pages(gesture_names: list[str]) -> list:
-    """tab title, note, rows of (section, field, label, tooltip, widget) or a group title string"""
+    """tab title, note, rows of (section, field, label, tooltip, widget), a list of two such rows sharing a line, or a group title string"""
     return [
         ("camera", "reopens the camera", [
             ("camera", "index", "camera", "camera index, 0 is the first one", int_box(0, 9)),
@@ -95,6 +96,25 @@ def pages(gesture_names: list[str]) -> list:
             ("stability", "min_confidence", "min confidence", "share of neighbor votes needed to switch", float_box(0.2, 1, 0.05)),
             ("keyboard", "repeat_ms", "repeat ms", "interval of repeated actions while a gesture is held", int_box(50, 3000)),
         ]),
+        ("gamepad", "changing the mode restarts the camera", [
+            "MODE",
+            ("app", "mode", "mode", "standard: mouse and keyboard, gamepad: both hands drive a virtual xbox controller (needs the ViGEmBus driver)", choice(*APP_MODES)),
+            "STICKS",
+            ("gamepad", "sticks", "sticks", "while a hand is in view its palm drives the stick on its side", QCheckBox()),
+            [
+                ("gamepad", "left_center_x", "left x", "left stick center, 0 = your left edge, 1 = your right edge", float_box(0, 1, 0.05)),
+                ("gamepad", "right_center_x", "right x", "right stick center, 0 = your left edge, 1 = your right edge", float_box(0, 1, 0.05)),
+            ],
+            [
+                ("gamepad", "center_y", "center y", "both stick centers, 0 = top edge, 1 = bottom edge", float_box(0, 1, 0.05)),
+                ("gamepad", "radius", "radius", "full push distance, share of the frame height", float_box(0.05, 1, 0.05)),
+            ],
+            [
+                ("gamepad", "deadzone", "deadzone", "share of the radius around the center that does nothing", float_box(0, 0.9, 0.01)),
+                ("gamepad", "curve", "curve", "1 = linear, higher = finer near the center", float_box(1, 4, 0.1)),
+            ],
+            "BINDINGS",
+        ]),
         ("safety", "stop key applies after restart", [
             ("safety", "lock", "lock", "start locked, hold the unlock gesture to begin, lock again when the hand leaves", QCheckBox()),
             ("safety", "unlock_gesture", "unlock", "hold this gesture to unlock control", choice(*gesture_names)),
@@ -117,26 +137,32 @@ class SettingsDialog(QDialog):
         self.rows = []
         self.labels = {}
 
+        self.bindings = BindingsEdit(cfg.gamepad.bindings, gesture_names)
+
         tabs = QTabWidget()
         for title, note, rows in pages(gesture_names):
             page = QWidget()
             form = QFormLayout(page)
+            form.setContentsMargins(18, 16, 18, 16)
+            form.setHorizontalSpacing(16)
+            form.setVerticalSpacing(10)
             for row in rows:
                 if isinstance(row, str):
                     form.addRow(group_title(row, first = form.rowCount() == 0))
-                    continue
-
-                section, name, label, tip, widget = row
-                set_value(widget, getattr(getattr(cfg, section), name))
-                widget.setToolTip(tip)
-                form.addRow(label, widget)
-                self.labels[widget] = form.labelForField(widget)
-                self.labels[widget].setToolTip(tip)
-                self.rows.append((section, name, widget))
+                elif isinstance(row, list):
+                    self._add_pair(form, *row)
+                else:
+                    section, name, label, tip, widget = row
+                    self._add_field(section, name, tip, widget)
+                    form.addRow(label, widget)
+                    self._label(widget, form.labelForField(widget))
+            if title == "gamepad":
+                form.addRow(self.bindings)
             if note:
                 form.addRow(QLabel(note))
             tabs.addTab(page, title)
 
+        self.setMinimumWidth(520)  # every tab title fits without scroll arrows
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -155,6 +181,34 @@ class SettingsDialog(QDialog):
         unlock_rows = [widgets["safety", "unlock_gesture"], widgets["safety", "unlock_frames"], widgets["safety", "lock_after"]]
         lock.toggled.connect(lambda on: [self._enable(w, on) for w in unlock_rows])
         lock.toggled.emit(lock.isChecked())
+
+    def _add_field(self, section: str, name: str, tip: str, widget) -> None:
+        set_value(widget, getattr(getattr(self.cfg, section), name))
+        widget.setToolTip(tip)
+        self.rows.append((section, name, widget))
+
+    def _label(self, widget, label: QLabel) -> None:
+        label.setToolTip(widget.toolTip())
+        self.labels[widget] = label
+
+    def _add_pair(self, form: QFormLayout, first, second) -> None:
+        """two short fields on one line, the first label stays in the form's label column"""
+        line = QHBoxLayout()
+        line.setContentsMargins(0, 0, 0, 0)
+        for i, (section, name, label, tip, widget) in enumerate((first, second)):
+            self._add_field(section, name, tip, widget)
+            if i:
+                text = QLabel(label)
+                text.setMinimumWidth(56)  # second boxes line up across lines
+                line.addSpacing(24)
+                line.addWidget(text)
+                self._label(widget, text)
+            line.addWidget(widget, 1)
+
+        holder = QWidget()
+        holder.setLayout(line)
+        form.addRow(first[2], holder)
+        self._label(first[4], form.labelForField(holder))
 
     def _sync_hands(self, control: str) -> None:
         """one hand controls; the runner still detects two internally to find it"""
@@ -176,6 +230,8 @@ class SettingsDialog(QDialog):
         for section, name, widget in self.rows:
             part = getattr(new, section)
             setattr(part, name, get_value(widget, getattr(part, name)))
+
+        new.gamepad.bindings = self.bindings.bindings()
 
         return new
 

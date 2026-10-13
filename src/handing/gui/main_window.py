@@ -3,10 +3,12 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPu
 
 from handing.gui.frame_view import FrameView
 from handing.gui.gesture_panel import GesturePanel
-from handing.control.modes.build import stick_area
+from handing.control.modes.build import control_center, stick_area
 from handing.config.schema import STYLED
 from handing.control.states import State
 from handing.features import anchor
+from handing.gamepad.mapping import Mapper
+from handing.gamepad.runner import GamepadTick
 from handing.gui.render import draw_hands, draw_stick
 from handing.gui.settings_dialog import SettingsDialog
 from handing.gui.status_card import StatusCard
@@ -77,7 +79,10 @@ class MainWindow(QMainWindow):
             return
 
         frame = draw_hands(tick.frame.copy(), tick.hands)
-        self._draw_stick(frame, tick)
+        if isinstance(tick, GamepadTick):
+            self._draw_pad(frame, tick)
+        else:
+            self._draw_stick(frame, tick)
         self.view.show_frame(frame)
         self.status.update_tick(tick)
 
@@ -91,6 +96,18 @@ class MainWindow(QMainWindow):
         center, radius = stick_area(cfg)
         point = anchor.of(tick.hand, g.point) * (tick.hands.width, tick.hands.height) if tick.hand else None
         draw_stick(frame, center, radius, cfg.cursor.joystick_deadzone, point)
+
+    def _draw_pad(self, frame, tick: GamepadTick) -> None:
+        """both stick rings all the time, mapper centers are control px so they flip back like the cursor stick"""
+        cfg = self.worker.cfg
+        if not cfg.gamepad.sticks:
+            return
+
+        mapper = Mapper(cfg)
+        for side, center in mapper.centers.items():
+            point = tick.sides[side].point
+            point = control_center(cfg, point) if point is not None else None
+            draw_stick(frame, control_center(cfg, center), mapper.radius, cfg.gamepad.deadzone, point)
 
     def on_output_changed(self, live: bool) -> None:
         self.output.blockSignals(True)

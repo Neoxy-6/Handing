@@ -3,7 +3,17 @@ import time
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
 from handing.control.states import State
+from handing.gamepad.runner import GamepadTick
 from handing.gui.style import STATE_COLORS
+
+def pad_text(tick: GamepadTick) -> str:
+    """'L fist (+0.4,-0.1)  ·  R -' per hand"""
+    parts = []
+    for side, s in tick.sides.items():
+        x, y = tick.pad.sticks[side]
+        parts.append(f"{side[0].upper()} {s.gesture} ({x:+.1f},{y:+.1f})" if s.hand else f"{side[0].upper()} -")
+
+    return "  ·  ".join(parts)
 
 class StatusCard(QFrame):
     """state dot and name, the running gesture in large type, raw prediction and fps underneath"""
@@ -51,8 +61,11 @@ class StatusCard(QFrame):
         self.set_state(tick.status.state)
         self.gesture.setText(tick.status.gesture or "-")
 
-        pred = tick.prediction
-        self.raw.setText(f"{pred.name}  ·  {pred.confidence:.0%}  ·  {pred.distance:.2f}" if pred else "no hand")
+        if isinstance(tick, GamepadTick):
+            self.raw.setText(pad_text(tick))
+        else:
+            pred = tick.prediction
+            self.raw.setText(f"{pred.name}  ·  {pred.confidence:.0%}  ·  {pred.distance:.2f}" if pred else "no hand")
 
         now = time.perf_counter()
         self.fps.setText(f"{1 / max(now - self._last_tick, 1e-6):.0f} fps")

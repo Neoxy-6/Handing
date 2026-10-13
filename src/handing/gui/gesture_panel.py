@@ -3,7 +3,7 @@ import copy
 from PySide6.QtCore import QModelIndex, Qt, Signal
 from PySide6.QtWidgets import QFrame, QGridLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout
 
-from handing.config.keys import split_key, variants
+from handing.config.keys import SIDES, resolve, split_key, variants
 from handing.config.lint import new_warnings
 from handing.config.schema import STYLED
 from handing.gui.gesture_settings import GestureSettings
@@ -19,6 +19,12 @@ def mode_summary(gestures: dict, name: str) -> str:
         g = gestures[key]
         mode = f"{g.mode}-{g.style}" if g.mode in STYLED else g.mode
         parts.append(mode if hand == "any" else f"{hand[0].upper()} {mode}")
+
+    return "  ·  ".join(parts) or "-"
+
+def binding_summary(bindings: dict, name: str) -> str:
+    """'L LT  ·  R RT' for the gamepad mode"""
+    parts = [f"{side[0].upper()} {bindings[key]}" for side in SIDES if (key := resolve(bindings, name, side)) in bindings]
 
     return "  ·  ".join(parts) or "-"
 
@@ -107,10 +113,12 @@ class GesturePanel(QFrame):
     def show_counts(self, counts: dict[str, int]) -> None:
         self.names = list(counts)
         self.list.clear()
-        gestures = self.worker.cfg.gestures
+        cfg = self.worker.cfg
+        gamepad = cfg.app.mode == "gamepad"
 
         for name, n in counts.items():
-            item = QTreeWidgetItem([name, mode_summary(gestures, name)])
+            summary = binding_summary(cfg.gamepad.bindings, name) if gamepad else mode_summary(cfg.gestures, name)
+            item = QTreeWidgetItem([name, summary])
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDropEnabled)  # dropping onto a row would nest it
             item.setToolTip(0, f"{n} samples")
             item.setToolTip(1, item.text(1))
