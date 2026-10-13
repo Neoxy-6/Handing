@@ -110,7 +110,7 @@ class GamepadConfig:
     right_center_x: float = 0.75
     center_y: float = 0.5  # 0 = top edge
     radius: float = 0.2  # share of the frame height for full push
-    deadzone: float = 0.15  # share of the radius
+    deadzone: float = 0.25  # share of the radius, hands drift more than thumbs
     curve: float = 1.0  # 1 = linear, higher = finer near the center
     bindings: dict[str, str] = field(default_factory = default_bindings)  # gesture key -> button or trigger, held while the gesture is
 
