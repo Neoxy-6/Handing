@@ -17,6 +17,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(prog = "handing", description = "gesture control in the terminal, dry run by default")
     p.add_argument("--live", action = "store_true", help = "really control the pc, ctrl+alt+q toggles stop")
     p.add_argument("--dual", action = "store_true", help = "only print what each hand shows, no output")
+    p.add_argument("--gamepad", action = "store_true", help = "both hands drive a virtual xbox controller, --live sends it")
 
     return p.parse_args()
 
@@ -63,6 +64,22 @@ def run_dual(cfg, samples: SampleSet) -> None:
     finally:
         capture.close()
 
+def run_gamepad(cfg, estop: EmergencyStop, live: bool) -> None:
+    from handing.gamepad.pad import DryPad, XboxPad, describe
+    from handing.gamepad.runner import GamepadRunner
+
+    pad = XboxPad(estop) if live else DryPad()
+
+    with estop, GamepadRunner(cfg, pad, load_samples()) as runner:
+        try:
+            while True:
+                tick = runner.step()
+                if tick:
+                    gestures = " ".join(f"{side[0].upper()} {s.gesture if s.hand else '-':8}" for side, s in tick.sides.items())
+                    print(f"\r{gestures} | {describe(tick.pad):<40}", end = "", flush = True)
+        except KeyboardInterrupt:
+            print()
+
 def main() -> None:
     args = parse_args()
     enable_dpi_awareness()
@@ -79,6 +96,9 @@ def main() -> None:
         keyboard = mouse = DryOutput()
 
     print(f"{'live' if args.live else 'dry run'}, config {paths.config_path()}, ctrl+c to quit")
+
+    if args.gamepad:
+        return run_gamepad(cfg, estop, args.live)
 
     with estop, Runner(cfg, keyboard, mouse, load_samples()) as runner:
         try:
