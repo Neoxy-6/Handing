@@ -102,12 +102,10 @@ class PadBinding:
     stick: bool = False  # with sticks: gesture, the palm drives the stick only while this gesture is held
 
 def default_bindings() -> dict[str, PadBinding]:
+    """no buttons, every game wants its own; point marks the stick gestures for when sticks is switched to gesture"""
     return {
-        "fist@left": PadBinding("LT"),
-        "peace@left": PadBinding("LB"),
-        "fist@right": PadBinding("RT"),
-        "point@right": PadBinding("A"),
-        "peace@right": PadBinding("B"),
+        "point@left": PadBinding(stick = True),
+        "point@right": PadBinding(stick = True),
     }
 
 @dataclass
@@ -116,7 +114,7 @@ class GamepadConfig:
     swap: bool = False  # the left hand drives the right stick and the right hand the left one
     left_center_x: float = 0.3  # stick centers, 0 = the user's left edge whether or not the frame is flipped, about shoulder width apart
     right_center_x: float = 0.7
-    center_y: float = 0.65  # 0 = top edge, low so elbows can rest on the desk
+    center_y: float = 0.5  # 0 = top edge
     radius: float = 0.15  # share of the frame height for full push, small so the wrist does the work
     deadzone: float = 0.25  # share of the radius, hands drift more than thumbs
     curve: float = 1.5  # 1 = linear, higher = finer near the center
