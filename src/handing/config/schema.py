@@ -114,12 +114,12 @@ def default_bindings() -> dict[str, PadBinding]:
 class GamepadConfig:
     sticks: str = "always"  # always: a palm in view drives its stick / gesture: only during gestures bound with stick / off
     swap: bool = False  # the left hand drives the right stick and the right hand the left one
-    left_center_x: float = 0.25  # stick centers, 0 = the user's left edge whether or not the frame is flipped
-    right_center_x: float = 0.75
-    center_y: float = 0.5  # 0 = top edge
-    radius: float = 0.2  # share of the frame height for full push
+    left_center_x: float = 0.3  # stick centers, 0 = the user's left edge whether or not the frame is flipped, about shoulder width apart
+    right_center_x: float = 0.7
+    center_y: float = 0.65  # 0 = top edge, low so elbows can rest on the desk
+    radius: float = 0.15  # share of the frame height for full push, small so the wrist does the work
     deadzone: float = 0.25  # share of the radius, hands drift more than thumbs
-    curve: float = 1.0  # 1 = linear, higher = finer near the center
+    curve: float = 1.5  # 1 = linear, higher = finer near the center
     bindings: dict[str, PadBinding] = field(default_factory = default_bindings)  # gesture key -> what that hand does while the gesture is held
 
 def default_gestures() -> dict[str, GestureConfig]:
