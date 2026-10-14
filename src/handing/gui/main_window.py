@@ -10,7 +10,7 @@ from handing.control.states import State
 from handing.features import anchor
 from handing.gamepad.mapping import Mapper
 from handing.gamepad.runner import GamepadTick
-from handing.gui.render import draw_hands, draw_stick
+from handing.gui.render import IDLE_STICK_COLOR, STICK_COLOR, draw_hands, draw_stick
 from handing.gui.settings_dialog import SettingsDialog
 from handing.gui.status_card import StatusCard
 from handing.gui.style import set_role
@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         self.view = FrameView()
         self.mode = ModeSwitch(worker.cfg.app.mode)
         self.mode.picked.connect(worker.set_mode)
-        self.status = StatusCard()
+        self.status = StatusCard(worker.cfg)
         self.output = QPushButton()
         self.output.setCheckable(True)
         self.output.setMinimumHeight(36)
@@ -103,16 +103,17 @@ class MainWindow(QMainWindow):
         draw_stick(frame, center, radius, cfg.cursor.joystick_deadzone, point)
 
     def _draw_pad(self, frame, tick: GamepadTick) -> None:
-        """both stick rings all the time, mapper centers are control px so they flip back like the cursor stick"""
+        """a ring per hand, dim while that hand is not driving its stick; mapper centers are control px so they flip back like the cursor stick"""
         cfg = self.worker.cfg
-        if not cfg.gamepad.sticks:
+        if cfg.gamepad.sticks == "off":
             return
 
         mapper = Mapper(cfg)
         for side, center in mapper.centers.items():
             point = tick.sides[side].point
-            point = control_center(cfg, point) if point is not None else None
-            draw_stick(frame, control_center(cfg, center), mapper.radius, cfg.gamepad.deadzone, point)
+            driving = side in tick.pad.driving
+            point = control_center(cfg, point) if point is not None and driving else None
+            draw_stick(frame, control_center(cfg, center), mapper.radius, cfg.gamepad.deadzone, point, STICK_COLOR if driving else IDLE_STICK_COLOR)
 
     def on_output_changed(self, live: bool) -> None:
         self.output.blockSignals(True)

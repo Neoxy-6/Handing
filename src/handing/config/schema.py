@@ -12,6 +12,7 @@ DIRECTIONS = ("left", "right", "up", "down")
 APP_MODES = ("standard", "gamepad")
 PAD_BUTTONS = ("A", "B", "X", "Y", "LB", "RB", "BACK", "START", "LS", "RS", "UP", "DOWN", "LEFT", "RIGHT")
 PAD_TRIGGERS = ("LT", "RT")
+STICK_MODES = ("always", "gesture", "off")
 
 @dataclass
 class AppConfig:
@@ -96,8 +97,9 @@ class GestureConfig:
 
 @dataclass
 class PadBinding:
-    button: str  # see PAD_BUTTONS and PAD_TRIGGERS
+    button: str | None = None  # see PAD_BUTTONS and PAD_TRIGGERS
     repeat: bool = False  # press and release every keyboard.repeat_ms while the gesture is held
+    stick: bool = False  # with sticks: gesture, the palm drives the stick only while this gesture is held
 
 def default_bindings() -> dict[str, PadBinding]:
     return {
@@ -110,14 +112,15 @@ def default_bindings() -> dict[str, PadBinding]:
 
 @dataclass
 class GamepadConfig:
-    sticks: bool = True  # while a hand is in view its palm drives the stick on its side
+    sticks: str = "always"  # always: a palm in view drives its stick / gesture: only during gestures bound with stick / off
+    swap: bool = False  # the left hand drives the right stick and the right hand the left one
     left_center_x: float = 0.25  # stick centers, 0 = the user's left edge whether or not the frame is flipped
     right_center_x: float = 0.75
     center_y: float = 0.5  # 0 = top edge
     radius: float = 0.2  # share of the frame height for full push
     deadzone: float = 0.25  # share of the radius, hands drift more than thumbs
     curve: float = 1.0  # 1 = linear, higher = finer near the center
-    bindings: dict[str, PadBinding] = field(default_factory = default_bindings)  # gesture key -> button, held while the gesture is
+    bindings: dict[str, PadBinding] = field(default_factory = default_bindings)  # gesture key -> what that hand does while the gesture is held
 
 def default_gestures() -> dict[str, GestureConfig]:
     return {

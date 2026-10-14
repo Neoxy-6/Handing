@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QMessageBox, QSizePolicy, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from handing.config.schema import CONTROL_HANDS, Config
+from handing.config.schema import CONTROL_HANDS, STICK_MODES, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
 from handing.gui.confirm import confirm_warnings
@@ -95,9 +95,12 @@ def pages(gesture_names: list[str]) -> list:
             ("cursor", "joystick_center_y", "center y", "stick center, 0 = top edge, 1 = bottom edge", float_box(0, 1, 0.05)),
             ("cursor", "joystick_radius", "radius", "full push distance, share of the frame height", float_box(0.1, 1, 0.05)),
         ]),
-        ("gamepad", "buttons are picked per gesture with edit in the main window", [
+        ("gamepad", "buttons and stick gestures are picked per gesture with edit in the main window", [
             "STICKS",
-            ("gamepad", "sticks", "sticks", "while a hand is in view its palm drives the stick on its side", QCheckBox()),
+            [
+                ("gamepad", "sticks", "sticks", "always: a palm in view drives its stick / gesture: only while a gesture with stick checked is held / off: buttons only", choice(*STICK_MODES)),
+                ("gamepad", "swap", "swap", "the left hand drives the right stick and the right hand the left one", QCheckBox()),
+            ],
             [
                 ("gamepad", "left_center_x", "left x", "left stick center, 0 = your left edge, 1 = your right edge", float_box(0, 1, 0.05)),
                 ("gamepad", "right_center_x", "right x", "right stick center, 0 = your left edge, 1 = your right edge", float_box(0, 1, 0.05)),

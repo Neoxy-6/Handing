@@ -32,13 +32,14 @@ def draw_hands(frame: np.ndarray, hand_frame: HandFrame) -> np.ndarray:
     return frame
 
 STICK_COLOR = (230, 160, 60)
+IDLE_STICK_COLOR = (110, 90, 70)  # a gamepad stick nobody drives right now
 
-def draw_stick(frame: np.ndarray, center: np.ndarray, radius: float, deadzone: float, hand_point: np.ndarray | None) -> None:
+def draw_stick(frame: np.ndarray, center: np.ndarray, radius: float, deadzone: float, hand_point: np.ndarray | None, color = STICK_COLOR) -> None:
     """joystick guide: outer ring, deadzone ring, line from the center to the hand"""
     c = tuple(center.astype(int))
-    cv2.circle(frame, c, int(radius), STICK_COLOR, 1, cv2.LINE_AA)
-    cv2.circle(frame, c, max(int(radius * deadzone), 2), STICK_COLOR, 1, cv2.LINE_AA)
-    cv2.drawMarker(frame, c, STICK_COLOR, cv2.MARKER_CROSS, 10, 1)
+    cv2.circle(frame, c, int(radius), color, 1, cv2.LINE_AA)
+    cv2.circle(frame, c, max(int(radius * deadzone), 2), color, 1, cv2.LINE_AA)
+    cv2.drawMarker(frame, c, color, cv2.MARKER_CROSS, 10, 1)
 
     if hand_point is not None:
-        cv2.line(frame, c, tuple(hand_point.astype(int)), STICK_COLOR, 2, cv2.LINE_AA)
+        cv2.line(frame, c, tuple(hand_point.astype(int)), color, 2, cv2.LINE_AA)

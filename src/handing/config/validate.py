@@ -1,7 +1,7 @@
 from pynput.keyboard import HotKey
 
 from handing.config.keys import SIDES, split_key
-from handing.config.schema import APP_MODES, CONTROL_HANDS, DIRECTIONS, MODES, PAD_BUTTONS, PAD_TRIGGERS, POINTS, STYLES_FOR, Config
+from handing.config.schema import APP_MODES, CONTROL_HANDS, DIRECTIONS, MODES, PAD_BUTTONS, PAD_TRIGGERS, POINTS, STICK_MODES, STYLES_FOR, Config
 from handing.output.macro import check_action, parse_macro
 
 def _one_of(value, options, where: str) -> None:
@@ -83,6 +83,7 @@ def validate(config: Config) -> None:
 
 def _gamepad(config: Config) -> None:
     pad = config.gamepad
+    _one_of(pad.sticks, STICK_MODES, "gamepad.sticks")
     for name in ("left_center_x", "right_center_x", "center_y"):
         _share(getattr(pad, name), f"gamepad.{name}")
     _positive(pad.radius, "gamepad.radius")
@@ -98,4 +99,7 @@ def _gamepad(config: Config) -> None:
         if "@" in str(key) and split_key(str(key))[1] not in SIDES:
             raise ValueError(f"{where}: the part after @ must be left or right")
 
-        _one_of(binding.button, PAD_BUTTONS + PAD_TRIGGERS, f"{where}.button" if binding.repeat else where)
+        if binding.button is None and not binding.stick:
+            raise ValueError(f"{where} needs a button or stick: true")
+        if binding.button is not None:
+            _one_of(binding.button, PAD_BUTTONS + PAD_TRIGGERS, f"{where}.button" if binding.repeat or binding.stick else where)

@@ -2,15 +2,17 @@ import time
 
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
+from handing.config.schema import Config
 from handing.control.states import State
 from handing.gamepad.runner import GamepadTick
 from handing.gui.style import STATE_COLORS
 
-def pad_text(tick: GamepadTick) -> str:
-    """'L fist (+0.4,-0.1)  ·  R -' per hand"""
+def pad_text(tick: GamepadTick, swap: bool) -> str:
+    """'L fist (+0.4,-0.1)  ·  R -' per hand, the values of the stick that hand drives"""
     parts = []
     for side, s in tick.sides.items():
-        x, y = tick.pad.sticks[side]
+        stick = ("right" if side == "left" else "left") if swap else side
+        x, y = tick.pad.sticks[stick]
         parts.append(f"{side[0].upper()} {s.gesture} ({x:+.1f},{y:+.1f})" if s.hand else f"{side[0].upper()} -")
 
     return "  ·  ".join(parts)
@@ -18,8 +20,9 @@ def pad_text(tick: GamepadTick) -> str:
 class StatusCard(QFrame):
     """state dot and name, the running gesture in large type, raw prediction and fps underneath"""
 
-    def __init__(self):
+    def __init__(self, cfg: Config):
         super().__init__()
+        self.cfg = cfg  # the worker's, so a stick swap shows up without rebuilding the card
         self.setObjectName("card")
 
         self.dot = QLabel()
@@ -62,7 +65,7 @@ class StatusCard(QFrame):
         self.gesture.setText(tick.status.gesture or "-")
 
         if isinstance(tick, GamepadTick):
-            self.raw.setText(pad_text(tick))
+            self.raw.setText(pad_text(tick, self.cfg.gamepad.swap))
         else:
             pred = tick.prediction
             self.raw.setText(f"{pred.name}  ·  {pred.confidence:.0%}  ·  {pred.distance:.2f}" if pred else "no hand")

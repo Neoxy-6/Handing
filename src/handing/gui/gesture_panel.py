@@ -24,12 +24,18 @@ def mode_summary(gestures: dict, name: str) -> str:
     return "  ·  ".join(parts) or "-"
 
 def binding_text(bindings: dict, name: str, side: str) -> str:
-    """'RT', 'A ↻' when it repeats, '-' when that hand presses nothing"""
+    """'RT', 'A ↻' when it repeats, 'A + stick', 'stick', '-' when that hand does nothing"""
     binding = bindings.get(resolve(bindings, name, side))
     if binding is None:
         return "-"
 
-    return f"{binding.button} ↻" if binding.repeat else binding.button
+    parts = []
+    if binding.button:
+        parts.append(f"{binding.button} ↻" if binding.repeat else binding.button)
+    if binding.stick:
+        parts.append("stick")
+
+    return " + ".join(parts)
 
 class GestureList(QTreeWidget):
     """flat list the user can reorder by dragging"""

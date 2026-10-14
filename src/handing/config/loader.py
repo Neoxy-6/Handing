@@ -34,6 +34,9 @@ def _migrate(cls, raw: dict) -> dict:
     if cls is MouseConfig:
         raw = {k: v for k, v in raw.items() if k != "mode"}  # mouse.mode was never used, styles live on gestures
 
+    if cls is GamepadConfig and isinstance(raw.get("sticks"), bool):
+        raw = {**raw, "sticks": "always" if raw["sticks"] else "off"}  # sticks used to be on / off
+
     if cls is CursorConfig:
         dropped = ("joystick_scroll_speed", "point")  # joystick scrolling was dropped, point moved to each gesture
         raw = {k: v for k, v in raw.items() if k not in dropped}
@@ -53,7 +56,7 @@ def _with_point(raw: dict | None, point: str | None) -> dict | None:
     return {**raw, "point": point}
 
 def _bindings(raw) -> dict:
-    """'RT' or {button: A, repeat: true} per gesture key, anything else is left for validate to reject"""
+    """'RT' or {button: A, repeat: true, stick: true} per gesture key, anything else is left for validate to reject"""
     if not isinstance(raw, dict):
         return raw
 
@@ -65,7 +68,7 @@ def _bindings(raw) -> dict:
         elif isinstance(value, dict):
             out[str(key)] = _section(PadBinding, value, where)
         else:
-            raise ValueError(f"{where} must be a button like RT or {{button: A, repeat: true}}, got {value!r}")
+            raise ValueError(f"{where} must be a button like RT or {{button: A, repeat: true, stick: true}}, got {value!r}")
 
     return out
 
@@ -104,6 +107,13 @@ def from_dict(raw: dict) -> Config:
 
     return config
 
+def _short(binding: dict):
+    """a plain button name when nothing else is set, otherwise only the fields in use"""
+    if binding["button"] and not binding["repeat"] and not binding["stick"]:
+        return binding["button"]
+
+    return {k: v for k, v in binding.items() if v}
+
 def to_dict(config: Config) -> dict:
     data = asdict(config)
     defaults = {f.name: f.default for f in fields(GestureConfig)}
@@ -111,7 +121,7 @@ def to_dict(config: Config) -> dict:
         name: {k: v for k, v in g.items() if k == "mode" or v != defaults[k]}
         for name, g in data["gestures"].items()
     }
-    data["gamepad"]["bindings"] = {key: b if b["repeat"] else b["button"] for key, b in data["gamepad"]["bindings"].items()}
+    data["gamepad"]["bindings"] = {key: _short(b) for key, b in data["gamepad"]["bindings"].items()}
 
     return data
 
