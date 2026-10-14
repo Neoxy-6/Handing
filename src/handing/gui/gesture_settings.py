@@ -22,7 +22,7 @@ STYLE_TIPS = {
     "mouse": "relative: follows hand movement / joystick: distance from the stick center sets the speed",
 }
 HINTS = {
-    "mouse": "moves the cursor\nspeed and stick settings are in settings > cursor",
+    "mouse": "moves the cursor\nspeed and stick settings are in settings > standard",
     "drag": "moves the cursor with the left button held\nlets go when the gesture ends",
     "lock": "locks control until the unlock gesture is held",
 }

@@ -26,6 +26,8 @@ class Mapper:
             for side, x in (("left", pad.left_center_x), ("right", pad.right_center_x))
         }
         self.smoothers = {side: OneEuro(cfg.cursor.min_cutoff, cfg.cursor.beta) for side in SIDES}
+        self.repeat_ms = cfg.keyboard.repeat_ms  # one press and release per period, like repeated actions
+        self._held: dict[str, tuple[str, int]] = {}  # side -> (binding key, when it started)
 
     def update(self, sides: dict[str, Side], timestamp_ms: int) -> PadState:
         sticks, pressed = {}, set()
@@ -33,12 +35,29 @@ class Mapper:
         for side in SIDES:
             s = sides[side]
             sticks[side] = self._stick(side, s, timestamp_ms)
-            if s.hand is not None:
-                button = self.pad.bindings.get(resolve(self.pad.bindings, s.gesture, side))
-                if button:
-                    pressed.add(button)
+            button = self._button(side, s, timestamp_ms)
+            if button:
+                pressed.add(button)
 
         return PadState(sticks, frozenset(pressed))
+
+    def _button(self, side: str, s: Side, timestamp_ms: int) -> str | None:
+        """the bound button while the gesture is held, a repeating one only in the first half of each period"""
+        key = resolve(self.pad.bindings, s.gesture, side) if s.hand is not None else None
+        binding = self.pad.bindings.get(key) if key else None
+        if binding is None:
+            self._held.pop(side, None)
+            return None
+
+        if self._held.get(side, (None,))[0] != key:
+            self._held[side] = (key, timestamp_ms)
+
+        if not binding.repeat:
+            return binding.button
+
+        elapsed = timestamp_ms - self._held[side][1]
+
+        return binding.button if elapsed % self.repeat_ms < self.repeat_ms / 2 else None
 
     def _stick(self, side: str, s: Side, timestamp_ms: int) -> tuple[float, float]:
         if s.point is None or not self.pad.sticks:

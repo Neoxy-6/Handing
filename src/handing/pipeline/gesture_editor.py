@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 
 from handing.config import loader
-from handing.config.keys import SEP, make_key, split_key, variants
-from handing.config.schema import Config, GestureConfig
+from handing.config.keys import SEP, SIDES, make_key, split_key, variants
+from handing.config.schema import Config, GestureConfig, PadBinding
 from handing.recognition.classifier import UNKNOWN
 from handing.recognition.samples import SampleSet
 
@@ -20,6 +20,10 @@ def check_name(name: str, existing: list[str]) -> str | None:
         return f"'{name}' already exists"
 
     return None
+
+def _renamed(mapping: dict, old: str, new: str) -> dict:
+    """every key of one gesture renamed, order kept"""
+    return {make_key(new, split_key(k)[1]) if split_key(k)[0] == old else k: v for k, v in mapping.items()}
 
 class GestureEditor:
     """keeps samples and config in sync, saves both after every change"""
@@ -44,14 +48,14 @@ class GestureEditor:
         self.samples.delete(name)
         for key in variants(self.cfg.gestures, name):
             self.cfg.gestures.pop(key)
+        for key in variants(self.cfg.gamepad.bindings, name):
+            self.cfg.gamepad.bindings.pop(key)
         self._save()
 
     def rename(self, old: str, new: str) -> None:
         self.samples.rename(old, new)
-        self.cfg.gestures = {
-            make_key(new, split_key(k)[1]) if split_key(k)[0] == old else k: v
-            for k, v in self.cfg.gestures.items()
-        }
+        self.cfg.gestures = _renamed(self.cfg.gestures, old, new)
+        self.cfg.gamepad.bindings = _renamed(self.cfg.gamepad.bindings, old, new)
 
         if self.cfg.safety.unlock_gesture == old:
             self.cfg.safety.unlock_gesture = new
@@ -64,6 +68,17 @@ class GestureEditor:
             self.cfg.gestures.pop(key, None)
         else:
             self.cfg.gestures[key] = gesture
+
+        loader.save(self.cfg)
+
+    def set_bindings(self, name: str, bindings: dict[str, PadBinding | None]) -> None:
+        """side -> binding of one gesture, None clears that hand; always stored per hand"""
+        pad = self.cfg.gamepad.bindings
+        pad.pop(name, None)  # a plain key would also apply to the hand that was just cleared
+        for side in SIDES:
+            pad.pop(make_key(name, side), None)
+            if bindings.get(side):
+                pad[make_key(name, side)] = bindings[side]
 
         loader.save(self.cfg)
 

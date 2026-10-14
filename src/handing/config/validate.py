@@ -93,9 +93,9 @@ def _gamepad(config: Config) -> None:
     if not isinstance(pad.bindings, dict):
         raise ValueError("gamepad.bindings must map gestures to buttons, like fist@right: RT")
 
-    for key, button in pad.bindings.items():
+    for key, binding in pad.bindings.items():
         where = f"gamepad.bindings.{key}"
         if "@" in str(key) and split_key(str(key))[1] not in SIDES:
             raise ValueError(f"{where}: the part after @ must be left or right")
 
-        _one_of(button, PAD_BUTTONS + PAD_TRIGGERS, where)
+        _one_of(binding.button, PAD_BUTTONS + PAD_TRIGGERS, f"{where}.button" if binding.repeat else where)

@@ -94,13 +94,18 @@ class GestureConfig:
     action: str | None = None  # action mode
     repeat: bool = False  # action mode, re-run while held
 
-def default_bindings() -> dict[str, str]:
+@dataclass
+class PadBinding:
+    button: str  # see PAD_BUTTONS and PAD_TRIGGERS
+    repeat: bool = False  # press and release every keyboard.repeat_ms while the gesture is held
+
+def default_bindings() -> dict[str, PadBinding]:
     return {
-        "fist@left": "LT",
-        "peace@left": "LB",
-        "fist@right": "RT",
-        "point@right": "A",
-        "peace@right": "B",
+        "fist@left": PadBinding("LT"),
+        "peace@left": PadBinding("LB"),
+        "fist@right": PadBinding("RT"),
+        "point@right": PadBinding("A"),
+        "peace@right": PadBinding("B"),
     }
 
 @dataclass
@@ -112,7 +117,7 @@ class GamepadConfig:
     radius: float = 0.2  # share of the frame height for full push
     deadzone: float = 0.25  # share of the radius, hands drift more than thumbs
     curve: float = 1.0  # 1 = linear, higher = finer near the center
-    bindings: dict[str, str] = field(default_factory = default_bindings)  # gesture key -> button or trigger, held while the gesture is
+    bindings: dict[str, PadBinding] = field(default_factory = default_bindings)  # gesture key -> button, held while the gesture is
 
 def default_gestures() -> dict[str, GestureConfig]:
     return {

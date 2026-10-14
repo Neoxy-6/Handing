@@ -7,6 +7,7 @@ from handing.config.keys import SIDES, resolve, split_key, variants
 from handing.config.lint import new_warnings
 from handing.config.schema import STYLED
 from handing.gui.gesture_settings import GestureSettings
+from handing.gui.pad_binding_dialog import PadBindingDialog
 from handing.gui.record_dialog import RecordDialog
 from handing.gui.worker import Worker
 from handing.pipeline.gesture_editor import check_name
@@ -22,11 +23,13 @@ def mode_summary(gestures: dict, name: str) -> str:
 
     return "  ·  ".join(parts) or "-"
 
-def binding_summary(bindings: dict, name: str) -> str:
-    """'L LT  ·  R RT' for the gamepad mode"""
-    parts = [f"{side[0].upper()} {bindings[key]}" for side in SIDES if (key := resolve(bindings, name, side)) in bindings]
+def binding_text(bindings: dict, name: str, side: str) -> str:
+    """'RT', 'A ↻' when it repeats, '-' when that hand presses nothing"""
+    binding = bindings.get(resolve(bindings, name, side))
+    if binding is None:
+        return "-"
 
-    return "  ·  ".join(parts) or "-"
+    return f"{binding.button} ↻" if binding.repeat else binding.button
 
 class GestureList(QTreeWidget):
     """flat list the user can reorder by dragging"""
@@ -63,15 +66,11 @@ class GesturePanel(QFrame):
 
         self.list = GestureList()
         self.list.reordered.connect(self._reordered)
-        self.list.setHeaderLabels(["gesture", "mode"])
         self.list.setRootIsDecorated(False)
         self.list.setUniformRowHeights(True)
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list.setTextElideMode(Qt.TextElideMode.ElideRight)
-        header = self.list.header()
-        header.setStretchLastSection(False)
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.list.header().setStretchLastSection(False)
 
         buttons = QGridLayout()
         buttons.setSpacing(6)
@@ -115,16 +114,30 @@ class GesturePanel(QFrame):
         self.list.clear()
         cfg = self.worker.cfg
         gamepad = cfg.app.mode == "gamepad"
+        self._set_columns(["gesture", *SIDES] if gamepad else ["gesture", "mode"])
 
         for name, n in counts.items():
-            summary = binding_summary(cfg.gamepad.bindings, name) if gamepad else mode_summary(cfg.gestures, name)
-            item = QTreeWidgetItem([name, summary])
+            if gamepad:
+                cells = [binding_text(cfg.gamepad.bindings, name, side) for side in SIDES]
+            else:
+                cells = [mode_summary(cfg.gestures, name)]
+            item = QTreeWidgetItem([name, *cells])
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDropEnabled)  # dropping onto a row would nest it
             item.setToolTip(0, f"{n} samples")
-            item.setToolTip(1, item.text(1))
+            for col in range(1, len(cells) + 1):
+                item.setToolTip(col, item.text(col))
             self.list.addTopLevelItem(item)
 
         self._sync_buttons()
+
+    def _set_columns(self, labels: list[str]) -> None:
+        """name column fits its text, the rest share the width"""
+        self.list.setColumnCount(len(labels))  # header labels alone never drop a column
+        self.list.setHeaderLabels(labels)
+        header = self.list.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        for col in range(1, len(labels)):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
 
     def _reordered(self, names: list[str]) -> None:
         self.names = names
@@ -151,6 +164,12 @@ class GesturePanel(QFrame):
     def settings(self) -> None:
         name = self.selected()
         if not name:
+            return
+
+        if self.worker.cfg.app.mode == "gamepad":
+            pad = PadBindingDialog(self.worker.cfg, name, self)
+            if pad.exec():
+                self.worker.set_bindings(name, pad.result_bindings())
             return
 
         dialog = GestureSettings(self.worker.cfg, name, self.names, self)

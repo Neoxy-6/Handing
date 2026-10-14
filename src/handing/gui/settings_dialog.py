@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
 from handing.config.schema import CONTROL_HANDS, Config
 from handing.config.lint import new_warnings
 from handing.config.validate import validate
-from handing.gui.bindings_edit import BindingsEdit
 from handing.gui.confirm import confirm_warnings
 from handing.recognition.samples import SampleSet
 from handing.recognition.similarity import confusable
@@ -96,7 +95,7 @@ def pages(gesture_names: list[str]) -> list:
             ("cursor", "joystick_center_y", "center y", "stick center, 0 = top edge, 1 = bottom edge", float_box(0, 1, 0.05)),
             ("cursor", "joystick_radius", "radius", "full push distance, share of the frame height", float_box(0.1, 1, 0.05)),
         ]),
-        ("gamepad", "", [
+        ("gamepad", "buttons are picked per gesture with edit in the main window", [
             "STICKS",
             ("gamepad", "sticks", "sticks", "while a hand is in view its palm drives the stick on its side", QCheckBox()),
             [
@@ -111,7 +110,6 @@ def pages(gesture_names: list[str]) -> list:
                 ("gamepad", "deadzone", "deadzone", "share of the radius around the center that does nothing", float_box(0, 0.9, 0.01)),
                 ("gamepad", "curve", "curve", "1 = linear, higher = finer near the center", float_box(1, 4, 0.1)),
             ],
-            "BINDINGS",
         ]),
         ("safety", "stop key applies after restart", [
             ("safety", "lock", "lock", "start locked, hold the unlock gesture to begin, lock again when the hand leaves", QCheckBox()),
@@ -135,8 +133,6 @@ class SettingsDialog(QDialog):
         self.rows = []
         self.labels = {}
 
-        self.bindings = BindingsEdit(cfg.gamepad.bindings, gesture_names)
-
         tabs = QTabWidget()
         for title, note, rows in pages(gesture_names):
             page = QWidget()
@@ -154,8 +150,6 @@ class SettingsDialog(QDialog):
                     self._add_field(section, name, tip, widget)
                     form.addRow(label, widget)
                     self._label(widget, form.labelForField(widget))
-            if title == "gamepad":
-                form.addRow(self.bindings)
             if note:
                 form.addRow(QLabel(note))
             filler = QWidget()
@@ -232,8 +226,6 @@ class SettingsDialog(QDialog):
         for section, name, widget in self.rows:
             part = getattr(new, section)
             setattr(part, name, get_value(widget, getattr(part, name)))
-
-        new.gamepad.bindings = self.bindings.bindings()
 
         return new
 

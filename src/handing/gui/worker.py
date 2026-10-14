@@ -73,6 +73,10 @@ class Worker(QThread):
     def configure(self, name: str, gesture: GestureConfig | None) -> None:
         self._jobs.put(lambda runner: self._edit(runner, self.editor.set_gesture, name, gesture))
 
+    def set_bindings(self, name: str, bindings: dict) -> None:
+        """gamepad buttons of one gesture, side -> PadBinding or None"""
+        self._jobs.put(lambda runner: self._edit(runner, self.editor.set_bindings, name, bindings))
+
     def apply_config(self, new: Config) -> None:
         """global settings, the pipeline restarts so camera and detection changes apply too"""
         self._jobs.put(lambda runner: self._apply(new))

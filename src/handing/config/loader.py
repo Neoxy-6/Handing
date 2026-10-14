@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from handing.config.schema import Config, CursorConfig, GestureConfig, MouseConfig
+from handing.config.schema import Config, CursorConfig, GamepadConfig, GestureConfig, MouseConfig, PadBinding
 from handing.config.validate import validate
 from handing.core import paths
 
@@ -52,6 +52,32 @@ def _with_point(raw: dict | None, point: str | None) -> dict | None:
 
     return {**raw, "point": point}
 
+def _bindings(raw) -> dict:
+    """'RT' or {button: A, repeat: true} per gesture key, anything else is left for validate to reject"""
+    if not isinstance(raw, dict):
+        return raw
+
+    out = {}
+    for key, value in raw.items():
+        where = f"gamepad.bindings.{key}"
+        if isinstance(value, str):
+            out[str(key)] = PadBinding(value)
+        elif isinstance(value, dict):
+            out[str(key)] = _section(PadBinding, value, where)
+        else:
+            raise ValueError(f"{where} must be a button like RT or {{button: A, repeat: true}}, got {value!r}")
+
+    return out
+
+def _gamepad(raw: dict | None) -> GamepadConfig:
+    raw = dict(raw or {})
+    bindings = raw.pop("bindings", None)
+    pad = _section(GamepadConfig, raw, "gamepad")
+    if bindings is not None:  # missing or empty keeps the defaults
+        pad.bindings = _bindings(bindings)
+
+    return pad
+
 def from_dict(raw: dict) -> Config:
     config = Config()
 
@@ -61,6 +87,8 @@ def from_dict(raw: dict) -> Config:
 
         if f.name == "macros":
             config.macros = dict(raw["macros"] or {})
+        elif f.name == "gamepad":
+            config.gamepad = _gamepad(raw["gamepad"])
         elif f.name == "gestures":
             old_point = (raw.get("cursor") or {}).get("point")  # used to be one setting for every gesture
             config.gestures = {
@@ -83,6 +111,7 @@ def to_dict(config: Config) -> dict:
         name: {k: v for k, v in g.items() if k == "mode" or v != defaults[k]}
         for name, g in data["gestures"].items()
     }
+    data["gamepad"]["bindings"] = {key: b if b["repeat"] else b["button"] for key, b in data["gamepad"]["bindings"].items()}
 
     return data
 
