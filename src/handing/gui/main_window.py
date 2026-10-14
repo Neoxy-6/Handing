@@ -127,7 +127,8 @@ class MainWindow(QMainWindow):
         samples = self.worker.editor.samples
         dialog = SettingsDialog(self.worker.cfg, samples.names, self, samples)
         if dialog.exec():
-            self.worker.apply_config(dialog.result_config())
+            apply = self.worker.reset_config if dialog.reset_all else self.worker.apply_config
+            apply(dialog.result_config())
 
     def on_failed(self, message: str) -> None:
         QMessageBox.critical(self, "Handing", message)

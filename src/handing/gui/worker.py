@@ -139,9 +139,15 @@ class Worker(QThread):
         self.editor.add(name, poses)
         self._refresh(runner)
 
-    def _apply(self, new: Config) -> None:
+    def reset_config(self, new: Config) -> None:
+        """everything but macros, gesture modes and gamepad buttons included; output goes off since the mode may change"""
+        self.set_output(False)
+        self._jobs.put(lambda runner: self._apply(new, keep = ("macros",)))
+        self.mode_changed.emit(new.app.mode)
+
+    def _apply(self, new: Config, keep: tuple[str, ...] = ("gestures", "macros")) -> None:
         for f in fields(Config):
-            if f.name not in ("gestures", "macros"):
+            if f.name not in keep:
                 setattr(self.cfg, f.name, getattr(new, f.name))
 
         loader.save(self.cfg)

@@ -134,6 +134,7 @@ class SettingsDialog(QDialog):
         self.gesture_names = gesture_names
         self.samples = samples
         self.rows = []
+        self.reset_all = False  # the defaults button was used, gestures and gamepad buttons go back too
         self.labels = {}
 
         tabs = QTabWidget()
@@ -164,6 +165,8 @@ class SettingsDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        defaults = buttons.addButton("defaults", QDialogButtonBox.ButtonRole.ResetRole)
+        defaults.clicked.connect(self._restore_defaults)
 
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
@@ -223,8 +226,26 @@ class SettingsDialog(QDialog):
         widget.setEnabled(on)
         self.labels[widget].setEnabled(on)
 
+    def _restore_defaults(self) -> None:
+        """fill every field with its default, nothing changes until OK"""
+        text = (
+            "Put every setting back to its default?\n\n"
+            "Gesture modes and gamepad buttons go back too, and the mode switches to standard. "
+            "Recorded gestures and macros stay. Nothing changes until you press OK."
+        )
+        if QMessageBox.question(self, "defaults", text) != QMessageBox.StandardButton.Yes:
+            return
+
+        fresh = Config()
+        for section, name, widget in self.rows:
+            set_value(widget, getattr(getattr(fresh, section), name))
+
+        self.reset_all = True
+
     def result_config(self) -> Config:
         new = copy.deepcopy(self.cfg)
+        if self.reset_all:
+            new = Config(macros = copy.deepcopy(self.cfg.macros))
 
         for section, name, widget in self.rows:
             part = getattr(new, section)
