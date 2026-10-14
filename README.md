@@ -32,6 +32,7 @@ You can lean back while you watch videos, scroll Reels or read, and still contro
   | `action` | Runs a key combo, a click or a macro, once or repeatedly while you hold the gesture. |
   | `lock` | Pauses control until you show the unlock gesture. |
 
+- **Gamepad mode.** Both hands become a virtual Xbox controller for any game that supports one. Each palm drives a stick, and gestures hold buttons and triggers, with optional repeat.
 - **Left and right hand.** A gesture can do something different on each hand (`fist@left`, `fist@right`), and you can limit control to one hand.
 - **Macros.** Chain key taps, holds, typed text, waits, clicks, moves and scrolls.
 - **Rotation alignment** (optional). Turns poses upright before comparing them, so a gesture still matches when you tilt your hand. Handing warns you when this would merge two of your gestures.
@@ -61,6 +62,12 @@ python -m venv .venv
 .venv\Scripts\handing
 ```
 
+For gamepad mode, install the extra as well. It opens the ViGEmBus driver installer:
+
+```powershell
+.venv\Scripts\pip install -e .[gamepad]
+```
+
 ## Usage
 
 1. Start Handing. The preview shows the camera image and the hand landmarks.
@@ -76,9 +83,26 @@ python -m venv .venv
 4. To make a new gesture, click **add**, name it, and hold the pose while it records. Then click **edit** to choose its mode.
 5. Minimizing the window hides it to the tray. Closing the window quits Handing.
 
+### Gamepad mode
+
+1. Click **gamepad** in the switch above the status card, or pick it from the tray menu under **mode**. Output turns off while the mode changes.
+2. The release build needs the ViGEmBus driver once. If it is missing, Handing shows the path of the bundled installer.
+3. The preview shows a stick ring for each hand. Move a palm away from its ring's center to push that stick.
+4. Select a gesture and click **edit** to choose, for each hand:
+   - **button**: held while the gesture is, like `RT` or `A`.
+   - **repeat**: press and release the button every `repeat ms` instead of holding it.
+   - **stick**: this gesture drives the stick.
+5. In **settings / gamepad**:
+   - **sticks**: `always` lets a palm in view drive its stick, `gesture` only during gestures marked stick, `off` uses buttons only.
+   - **swap**: the left hand drives the right stick and the other way round.
+   - Center, radius, deadzone and curve tune the feel.
+6. No buttons are bound by default, since every game wants its own. `point` is marked stick on both hands.
+7. `Ctrl+Alt+Q` still turns output on and off, and releases every button and stick.
+
+The **defaults** button in settings puts everything back, gesture modes and gamepad buttons included. Recorded gestures and macros stay.
+
 Settings are saved in `%APPDATA%\Handing\config.yaml`, and your gesture samples in `%APPDATA%\Handing\gestures.npz`.
 
 ## Future Outlook
 
-- **Gamepad mode.** Both hands become a virtual Xbox controller through ViGEmBus. Hand positions drive the two sticks, and gestures press the buttons and triggers.
 - **VR mode.** Both hands become SteamVR controllers through VMT. It works without a headset by using SteamVR's null driver.
