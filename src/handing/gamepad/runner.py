@@ -25,12 +25,13 @@ class GamepadTick:
 
     @property
     def status(self) -> Status:
-        """standby without hands, active while a button is held, so tray and overlay read it like the standard one"""
+        """standby without hands, active while a button is held or a palm drives a stick ('A + stick'), idle when the pad gets nothing"""
         if self.hand is None:
             return Status(State.STANDBY)
 
-        if self.pad.pressed:
-            return Status(State.ACTIVE, " ".join(sorted(self.pad.pressed)))
+        parts = sorted(self.pad.pressed) + (["stick"] if self.pad.driving else [])
+        if parts:
+            return Status(State.ACTIVE, " + ".join(parts))
 
         return Status(State.IDLE)
 
