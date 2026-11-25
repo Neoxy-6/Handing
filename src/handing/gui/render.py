@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from mediapipe.tasks.python.vision import HandLandmarksConnections
 
-from handing.core.types import HandFrame
+from handing.core.types import Body, HandFrame
 
 CONNECTIONS = [(c.start, c.end) for c in HandLandmarksConnections.HAND_CONNECTIONS]
 LINE_COLOR = (0, 200, 0)
@@ -30,6 +30,27 @@ def draw_hands(frame: np.ndarray, hand_frame: HandFrame) -> np.ndarray:
         cv2.putText(frame, hand.handedness, (x, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, LINE_COLOR, 1)
 
     return frame
+
+ARM_COLOR = (255, 170, 40)
+HIDDEN_COLOR = (90, 90, 90)  # joints the pose model is unsure about
+
+def draw_arms(frame: np.ndarray, body: Body, min_visibility: float = 0.5) -> None:
+    """shoulder -> elbow -> wrist per arm, grey where a joint is not seen"""
+    h, w = frame.shape[:2]
+
+    for side, arm in body.arms.items():
+        pts = (arm.points * (w, h)).astype(int)
+        seen = arm.visibility >= min_visibility
+
+        for a, b in ((0, 1), (1, 2)):
+            color = ARM_COLOR if seen[a] and seen[b] else HIDDEN_COLOR
+            cv2.line(frame, tuple(pts[a]), tuple(pts[b]), color, 3, cv2.LINE_AA)
+
+        for p, ok in zip(pts, seen):
+            cv2.circle(frame, tuple(p), 5, ARM_COLOR if ok else HIDDEN_COLOR, -1)
+
+        x, y = pts[0]
+        cv2.putText(frame, side, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, ARM_COLOR, 1)
 
 STICK_COLOR = (230, 160, 60)
 IDLE_STICK_COLOR = (110, 90, 70)  # a gamepad stick nobody drives right now

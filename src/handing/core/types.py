@@ -24,3 +24,17 @@ class HandFrame:
     @property
     def empty(self) -> bool:
         return not self.hands
+
+@dataclass(frozen = True)
+class Arm:
+    points: np.ndarray  # (3, 2) normalized image coords: shoulder, elbow, wrist
+    world: np.ndarray  # (3, 3) meters, origin between the hips
+    visibility: np.ndarray  # (3,) 0..1, low when off screen or hidden
+
+    def seen(self, min_visibility: float = 0.5) -> bool:
+        return bool((self.visibility >= min_visibility).all())
+
+@dataclass(frozen = True)
+class Body:
+    timestamp_ms: int
+    arms: dict[str, Arm]  # "left" / "right", the real arm, empty without a person

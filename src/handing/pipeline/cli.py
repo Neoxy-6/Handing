@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--live", action = "store_true", help = "really control the pc, ctrl+alt+q toggles stop")
     p.add_argument("--dual", action = "store_true", help = "only print what each hand shows, no output")
     p.add_argument("--gamepad", action = "store_true", help = "both hands drive a virtual xbox controller, --live sends it")
+    p.add_argument("--vr", action = "store_true", help = "preview window with hands and arms, q quits")
 
     return p.parse_args()
 
@@ -80,10 +81,69 @@ def run_gamepad(cfg, estop: EmergencyStop, live: bool) -> None:
         except KeyboardInterrupt:
             print()
 
+def arm_text(body, side: str) -> str:
+    arm = body.arms.get(side)
+    if arm is None:
+        return "-" * 14
+
+    return " ".join(f"{v:.2f}" for v in arm.visibility)
+
+def vr_hint(body) -> str:
+    """what the user must change before vr can track, empty when ready"""
+    if not body.arms:
+        return "no body: head and shoulders must be in view"
+
+    hidden = [side for side, arm in body.arms.items() if not arm.seen()]
+    if hidden:
+        return f"{' and '.join(hidden)} arm not fully seen: move back until elbows are in view"
+
+    return ""
+
+def run_vr(cfg) -> None:
+    import cv2
+
+    from handing.detection.body import BodyLandmarker
+    from handing.gui import render
+    from handing.input.preprocess import to_rgb
+
+    capture = Capture(cfg, 2)
+    body_lm = BodyLandmarker(paths.model_path("pose_landmarker_lite.task"), cfg.detection.min_confidence, cfg.camera.frame_mirrored)
+    capture.open()
+
+    try:
+        while cv2.waitKey(1) & 0xFF not in (ord("q"), 27):
+            read = capture.read()
+            if read is None:
+                continue
+
+            frame, hands = read
+            capture.saw_hand()  # pose needs every frame, never idle
+            body = body_lm.detect(to_rgb(frame), hands.timestamp_ms)
+
+            render.draw_hands(frame, hands)
+            render.draw_arms(frame, body)
+            hint = vr_hint(body)
+            if hint:
+                cv2.putText(frame, hint, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2, cv2.LINE_AA)
+
+            cv2.imshow("handing vr", frame)
+            print(f"\rshoulder elbow wrist | L {arm_text(body, 'left')} | R {arm_text(body, 'right')}", end = "", flush = True)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print()
+        cv2.destroyAllWindows()
+        body_lm.close()
+        capture.close()
+
 def main() -> None:
     args = parse_args()
     enable_dpi_awareness()
     cfg = loader.load()
+
+    if args.vr:
+        print("vr preview, q or esc in the window to quit")
+        return run_vr(cfg)
 
     if args.dual:
         print(f"both hands, config {paths.config_path()}, ctrl+c to quit")
