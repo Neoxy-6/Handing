@@ -63,6 +63,17 @@ def draw_reach(frame: np.ndarray, values: dict[str, float]) -> None:
         cv2.rectangle(frame, (x, y), (x + int(bar_w * min(max(v, 0), 1)), y + 12), ARM_COLOR, -1)
         cv2.putText(frame, f"{side} reach {v:.2f}", (x, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, ARM_COLOR, 1)
 
+FORWARD_COLOR = (60, 60, 255)
+UP_COLOR = (60, 220, 60)
+
+def draw_controller(frame: np.ndarray, origin: np.ndarray, forward: np.ndarray, up: np.ndarray, mirrored: bool, length: int = 60) -> None:
+    """controller axes from origin (px): forward red, up green, seen from the camera so depth is dropped"""
+    o = origin.astype(int)
+
+    for v, color in ((up, UP_COLOR), (forward, FORWARD_COLOR)):
+        tip = o + (np.array([v[0] if mirrored else -v[0], -v[1]]) * length).astype(int)
+        cv2.arrowedLine(frame, tuple(o), tuple(tip), color, 2, cv2.LINE_AA, tipLength = 0.25)
+
 STICK_COLOR = (230, 160, 60)
 IDLE_STICK_COLOR = (110, 90, 70)  # a gamepad stick nobody drives right now
 

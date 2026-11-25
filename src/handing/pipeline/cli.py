@@ -105,13 +105,16 @@ def run_vr(cfg) -> None:
     from handing.detection.body import BodyLandmarker
     from handing.gui import render
     from handing.input.preprocess import to_rgb
-
     from handing.vr.arm import Calibration, Reach
+    from handing.vr.pose import PoseTracker
+    from handing.vr.space import Space
 
+    mirrored = cfg.camera.frame_mirrored
+    space = Space(mirrored = mirrored)
     capture = Capture(cfg, 2)
-    body_lm = BodyLandmarker(paths.model_path("pose_landmarker_lite.task"), cfg.detection.min_confidence, cfg.camera.frame_mirrored)
+    body_lm = BodyLandmarker(paths.model_path("pose_landmarker_lite.task"), cfg.detection.min_confidence, mirrored)
     capture.open()
-    calibration, reach = None, None
+    calibration, reach, tracker = None, None, None
 
     try:
         while True:
@@ -135,22 +138,35 @@ def run_vr(cfg) -> None:
                 calibration.add(body)
                 hint = hint or f"hold both arms straight out sideways {calibration.progress:.0%}"
                 if calibration.done:
-                    reach = Reach(calibration.result())
-                    print(f"\ncalibrated {calibration.result()}")
+                    sizes = calibration.result()
+                    reach, tracker = Reach(sizes), PoseTracker(space, sizes)
+                    print(f"\ncalibrated {sizes}")
                     calibration = None
             elif reach is None and not hint:
                 hint = "press c, then hold both arms straight out sideways"
 
             render.draw_hands(frame, hands)
             render.draw_arms(frame, body)
+            line = f"shoulder elbow wrist | L {arm_text(body, 'left')} | R {arm_text(body, 'right')}"
+
             if reach:
-                render.draw_reach(frame, reach.update(body))
+                values = reach.update(body)
+                render.draw_reach(frame, values)
+
+                by_side = {h.handedness.lower(): h for h in hands.hands}
+                poses = tracker.update(body, by_side, values)
+                for side, pose in poses.items():
+                    if pose.tracked:
+                        wrist = body.arms[side].points[2] * (body.width, body.height)
+                        render.draw_controller(frame, wrist, pose.forward, pose.up, mirrored)
+
+                line = " | ".join(f"{side[0].upper()} " + ("{:+.2f} {:+.2f} {:+.2f}".format(*p.position) if p.tracked else "-" * 17) for side, p in poses.items())
 
             if hint:
                 cv2.putText(frame, hint, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2, cv2.LINE_AA)
 
             cv2.imshow("handing vr", frame)
-            print(f"\rshoulder elbow wrist | L {arm_text(body, 'left')} | R {arm_text(body, 'right')}", end = "", flush = True)
+            print(f"\r{line:<60}", end = "", flush = True)
     except KeyboardInterrupt:
         pass
     finally:
