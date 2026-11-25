@@ -106,12 +106,19 @@ def run_vr(cfg) -> None:
     from handing.gui import render
     from handing.input.preprocess import to_rgb
 
+    from handing.vr.arm import Calibration, Reach
+
     capture = Capture(cfg, 2)
     body_lm = BodyLandmarker(paths.model_path("pose_landmarker_lite.task"), cfg.detection.min_confidence, cfg.camera.frame_mirrored)
     capture.open()
+    calibration, reach = None, None
 
     try:
-        while cv2.waitKey(1) & 0xFF not in (ord("q"), 27):
+        while True:
+            key = cv2.waitKey(1) & 0xFF
+            if key in (ord("q"), 27):
+                break
+
             read = capture.read()
             if read is None:
                 continue
@@ -119,10 +126,26 @@ def run_vr(cfg) -> None:
             frame, hands = read
             capture.saw_hand()  # pose needs every frame, never idle
             body = body_lm.detect(to_rgb(frame), hands.timestamp_ms)
+            hint = vr_hint(body)
+
+            if key == ord("c") and not hint:
+                calibration = Calibration()
+
+            if calibration:
+                calibration.add(body)
+                hint = hint or f"hold both arms straight out sideways {calibration.progress:.0%}"
+                if calibration.done:
+                    reach = Reach(calibration.result())
+                    print(f"\ncalibrated {calibration.result()}")
+                    calibration = None
+            elif reach is None and not hint:
+                hint = "press c, then hold both arms straight out sideways"
 
             render.draw_hands(frame, hands)
             render.draw_arms(frame, body)
-            hint = vr_hint(body)
+            if reach:
+                render.draw_reach(frame, reach.update(body))
+
             if hint:
                 cv2.putText(frame, hint, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2, cv2.LINE_AA)
 

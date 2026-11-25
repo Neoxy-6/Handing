@@ -28,15 +28,16 @@ class BodyLandmarker:
         """timestamps must increase between calls"""
         image = mp.Image(image_format = mp.ImageFormat.SRGB, data = rgb)
         result = self._task.detect_for_video(image, timestamp_ms)
+        h, w = rgb.shape[:2]
         if not result.pose_landmarks:
-            return Body(timestamp_ms, {})
+            return Body(timestamp_ms, w, h, {})
 
         lms, world = result.pose_landmarks[0], result.pose_world_landmarks[0]
         arms = {side: _to_arm(lms, world, ids) for side, ids in ARMS.items()}
         if self.mirrored:
             arms = {"left": arms["right"], "right": arms["left"]}
 
-        return Body(timestamp_ms, arms)
+        return Body(timestamp_ms, w, h, arms)
 
     def close(self) -> None:
         self._task.close()

@@ -37,4 +37,6 @@ class Arm:
 @dataclass(frozen = True)
 class Body:
     timestamp_ms: int
+    width: int
+    height: int
     arms: dict[str, Arm]  # "left" / "right", the real arm, empty without a person

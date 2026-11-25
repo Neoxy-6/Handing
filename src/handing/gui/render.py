@@ -52,6 +52,17 @@ def draw_arms(frame: np.ndarray, body: Body, min_visibility: float = 0.5) -> Non
         x, y = pts[0]
         cv2.putText(frame, side, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, ARM_COLOR, 1)
 
+def draw_reach(frame: np.ndarray, values: dict[str, float]) -> None:
+    """one bar per arm at the bottom, full when the arm points at the camera"""
+    h, w = frame.shape[:2]
+    bar_w = w // 2 - 30
+
+    for i, (side, v) in enumerate(sorted(values.items())):
+        x, y = 15 + i * (w // 2), h - 25
+        cv2.rectangle(frame, (x, y), (x + bar_w, y + 12), HIDDEN_COLOR, 1)
+        cv2.rectangle(frame, (x, y), (x + int(bar_w * min(max(v, 0), 1)), y + 12), ARM_COLOR, -1)
+        cv2.putText(frame, f"{side} reach {v:.2f}", (x, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, ARM_COLOR, 1)
+
 STICK_COLOR = (230, 160, 60)
 IDLE_STICK_COLOR = (110, 90, 70)  # a gamepad stick nobody drives right now
 
