@@ -44,14 +44,6 @@ You can lean back while you watch videos, scroll Reels or read, and still contro
 
 ## Install
 
-### Release build
-
-1. Download `Handing-<version>-win64.zip` from [Releases](https://github.com/Neoxy-6/Handing/releases).
-2. Unzip it anywhere.
-3. Run `Handing.exe`. No Python is needed.
-
-### From source
-
 Requires Python 3.10 or later on Windows.
 
 ```powershell
@@ -86,7 +78,7 @@ For gamepad mode, install the extra as well. It opens the ViGEmBus driver instal
 ### Gamepad mode
 
 1. Click **gamepad** in the switch above the status card, or pick it from the tray menu under **mode**. Output turns off while the mode changes.
-2. The release build needs the ViGEmBus driver once. If it is missing, Handing shows the path of the bundled installer.
+2. Gamepad mode needs the ViGEmBus driver once. If it is missing, Handing shows the path of its installer.
 3. The preview shows a stick ring for each hand. Move a palm away from its ring's center to push that stick.
 4. Select a gesture and click **edit** to choose, for each hand:
    - **button**: held while the gesture is, like `RT` or `A`.
